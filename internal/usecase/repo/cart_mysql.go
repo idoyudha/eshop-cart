@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/idoyudha/eshop-cart/internal/entity"
@@ -80,16 +81,16 @@ func (r *CartMySQLRepo) Update(ctx context.Context, cart *entity.Cart) error {
 	return nil
 }
 
-const queryDeleteCart = `UPDATE carts SET deleted_at = ? WHERE id = ?`
+const queryDeleteCart = `UPDATE carts SET deleted_at = ? WHERE id IN ?`
 
-func (r *CartMySQLRepo) Delete(ctx context.Context, cartID uuid.UUID) error {
+func (r *CartMySQLRepo) DeleteMany(ctx context.Context, cartIDs uuid.UUIDs) error {
 	stmt, errStmt := r.Conn.PrepareContext(ctx, queryDeleteCart)
 	if errStmt != nil {
 		return errStmt
 	}
 	defer stmt.Close()
 
-	_, deleteErr := stmt.ExecContext(ctx, cartID)
+	_, deleteErr := stmt.ExecContext(ctx, time.Now(), cartIDs)
 	if deleteErr != nil {
 		return deleteErr
 	}
