@@ -1,0 +1,9 @@
+app:
+  name: 'github.com/idoyudha/eshop-cart'
+  version: '1.0.0'
+
+http:
+  port: '2002'
+
+log:
+  level: 'debug'
