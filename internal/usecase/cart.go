@@ -10,8 +10,8 @@ import (
 type (
 	CartMySQLRepo interface {
 		Insert(context.Context, *entity.Cart) error
+		GetByUserID(context.Context, uuid.UUID) (*entity.Cart, error)
 		Update(context.Context, *entity.Cart) error
-		Get(context.Context, uuid.UUID) (*entity.Cart, error)
 		Delete(context.Context, uuid.UUID) error
 	}
 

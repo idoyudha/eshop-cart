@@ -31,6 +31,8 @@ func getUserCartsKey(userID string) string {
 	return fmt.Sprintf("user:%s:carts", userID)
 }
 
+// store cart data as hash -> cart:{cartID}
+// add cartID to set -> user:{userID}:carts
 func (r *CartRedisRepo) Save(ctx context.Context, cart *entity.Cart) error {
 	cartKey := getCartKey(cart.ID.String())
 	userCartsKey := getUserCartsKey(cart.UserID.String())
