@@ -77,6 +77,11 @@ func (r *cartRoutes) getCart(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, newGetSuccess(carts))
 }
 
+type UpdateCartRequest struct {
+	ProductQuantity int64  `json:"product_quantity"`
+	Note            string `json:"note"`
+}
+
 func (r *cartRoutes) updateCart(ctx *gin.Context) {
 	cartID, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
@@ -84,20 +89,26 @@ func (r *cartRoutes) updateCart(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, newBadRequestError(err.Error()))
 		return
 	}
-	carts, err := r.uc.GetUserCart(ctx.Request.Context(), cartID)
+
+	var req UpdateCartRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		r.l.Error(err, "http - v1 - cartRoutes - createCart")
+		ctx.JSON(http.StatusBadRequest, newBadRequestError(err.Error()))
+		return
+	}
+
+	// TODO: get from token
+	userID, _ := uuid.NewV7()
+	cart := UpdateCartRequestToCartEntity(cartID, userID, req)
+
+	err = r.uc.UpdateCart(ctx.Request.Context(), &cart)
 	if err != nil {
 		r.l.Error(err, "http - v1 - cartRoutes - updateCart")
 		ctx.JSON(http.StatusInternalServerError, newInternalServerError(err.Error()))
 		return
 	}
 
-	if len(carts) == 0 {
-		r.l.Error(err, "http - v1 - cartRoutes - updateCart")
-		ctx.JSON(http.StatusNotFound, newNotFoundError("cart not found"))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, newGetSuccess(carts))
+	ctx.JSON(http.StatusOK, newUpdateSuccess(cart))
 }
 
 type DeleteCartsRequest struct {

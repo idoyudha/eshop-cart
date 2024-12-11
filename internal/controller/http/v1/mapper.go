@@ -24,3 +24,13 @@ func CreateCartRequestToCartEntity(userID uuid.UUID, req CreateCartRequest) (ent
 		UpdatedAt:       time.Now(),
 	}, nil
 }
+
+func UpdateCartRequestToCartEntity(cartID uuid.UUID, userID uuid.UUID, req UpdateCartRequest) entity.Cart {
+	return entity.Cart{
+		ID:              cartID,
+		UserID:          userID,
+		ProductQuantity: req.ProductQuantity,
+		Note:            req.Note,
+		UpdatedAt:       time.Now(),
+	}
+}

@@ -71,7 +71,7 @@ func (u *CartUseCase) UpdateCart(ctx context.Context, cart *entity.Cart) error {
 	return nil
 }
 
-func (u *CartUseCase) DeleteCart(ctx context.Context, userID uuid.UUID, cartIDs uuid.UUIDs) error {
+func (u *CartUseCase) DeleteCarts(ctx context.Context, userID uuid.UUID, cartIDs uuid.UUIDs) error {
 	if errDelete := u.repoMySQL.DeleteMany(ctx, cartIDs); errDelete != nil {
 		return errDelete
 	}
