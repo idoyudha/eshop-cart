@@ -19,7 +19,7 @@ func NewCartMySQLRepo(client *mysqlClient.MySQL) *CartMySQLRepo {
 	}
 }
 
-const queryInsertCart = `INSERT INTO carts (id, user_id, product_id, product_name, product_name, product_price, product_quantity, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+const queryInsertCart = `INSERT INTO carts (id, user_id, product_id, product_name, product_price, product_quantity, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 func (r *CartMySQLRepo) Insert(ctx context.Context, cart *entity.Cart) error {
 	stmt, errStmt := r.Conn.PrepareContext(ctx, queryInsertCart)
@@ -81,16 +81,33 @@ func (r *CartMySQLRepo) Update(ctx context.Context, cart *entity.Cart) error {
 	return nil
 }
 
-const queryDeleteCart = `UPDATE carts SET deleted_at = ? WHERE id IN ?`
+const querySoftDeleteCart = `UPDATE carts SET deleted_at = ? WHERE id IN ?`
 
 func (r *CartMySQLRepo) DeleteMany(ctx context.Context, cartIDs uuid.UUIDs) error {
-	stmt, errStmt := r.Conn.PrepareContext(ctx, queryDeleteCart)
+	stmt, errStmt := r.Conn.PrepareContext(ctx, querySoftDeleteCart)
 	if errStmt != nil {
 		return errStmt
 	}
 	defer stmt.Close()
 
 	_, deleteErr := stmt.ExecContext(ctx, time.Now(), cartIDs)
+	if deleteErr != nil {
+		return deleteErr
+	}
+
+	return nil
+}
+
+const queryDeleteCart = `DELETE FROM carts WHERE id = ?`
+
+func (r *CartMySQLRepo) DeleteOne(ctx context.Context, cartID uuid.UUID) error {
+	stmt, errStmt := r.Conn.PrepareContext(ctx, queryDeleteCart)
+	if errStmt != nil {
+		return errStmt
+	}
+	defer stmt.Close()
+
+	_, deleteErr := stmt.ExecContext(ctx, cartID)
 	if deleteErr != nil {
 		return deleteErr
 	}

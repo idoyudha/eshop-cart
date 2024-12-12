@@ -24,7 +24,11 @@ func (u *CartUseCase) CreateCart(ctx context.Context, cart *entity.Cart) error {
 		return errInsert
 	}
 
-	if errSave := u.repoRedis.Save(ctx, cart); errSave != nil {
+	errSave := u.repoRedis.Save(ctx, cart)
+
+	// delete cart from mysql if save to redis failed
+	if errSave != nil {
+		_ = u.repoMySQL.DeleteOne(ctx, cart.ID)
 		return errSave
 	}
 

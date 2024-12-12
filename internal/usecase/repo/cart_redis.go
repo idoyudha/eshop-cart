@@ -40,7 +40,17 @@ func (r *CartRedisRepo) Save(ctx context.Context, cart *entity.Cart) error {
 	// perform multiple operations
 	pipe := r.Client.Pipeline()
 
-	pipe.HSet(ctx, cartKey, cart)
+	cartMap := map[string]interface{}{
+		"id":               cart.ID.String(),
+		"user_id":          cart.UserID.String(),
+		"product_id":       cart.ProductID.String(),
+		"product_name":     cart.ProductName,
+		"product_price":    cart.ProductPrice,
+		"product_quantity": cart.ProductQuantity,
+		"note":             cart.Note,
+	}
+
+	pipe.HSet(ctx, cartKey, cartMap)
 	pipe.SAdd(ctx, userCartsKey, cart.ID.String())
 
 	_, err := pipe.Exec(ctx)

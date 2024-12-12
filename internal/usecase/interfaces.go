@@ -13,6 +13,7 @@ type (
 		GetByUserID(context.Context, uuid.UUID) ([]*entity.Cart, error)
 		Update(context.Context, *entity.Cart) error
 		DeleteMany(context.Context, uuid.UUIDs) error
+		DeleteOne(context.Context, uuid.UUID) error
 	}
 
 	CartRedisRepo interface {
