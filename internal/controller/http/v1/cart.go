@@ -20,7 +20,7 @@ func newCartRoutes(handler *gin.RouterGroup, uc usecase.Cart, l logger.Interface
 	h := handler.Group("/carts")
 	{
 		h.POST("", r.createCart)
-		h.GET("", r.getCart)
+		h.GET("/user", r.getCartByUserID)
 		h.PUT("/:id", r.updateCart)
 		h.PATCH("/deletes", r.deleteCarts)
 	}
@@ -63,7 +63,7 @@ func (r *cartRoutes) createCart(ctx *gin.Context) {
 }
 
 // get cart by user id
-func (r *cartRoutes) getCart(ctx *gin.Context) {
+func (r *cartRoutes) getCartByUserID(ctx *gin.Context) {
 	// TODO: get from token
 	userID, _ := uuid.NewV7()
 
