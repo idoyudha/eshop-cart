@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/idoyudha/eshop-cart/config"
 )
 
 const (
@@ -17,22 +19,22 @@ type MySQL struct {
 	Conn *sql.DB
 }
 
-func New(url string) (*MySQL, error) {
-	md := &MySQL{}
+func NewMySQL(cfg config.MySQL) (*MySQL, error) {
+	mysql := &MySQL{}
 	var err error
-	md.Conn, err = sql.Open(_defaultDriver, url)
 
+	mysql.Conn, err = sql.Open(_defaultDriver, cfg.URL)
 	if err != nil {
-		return nil, fmt.Errorf("cannot connect to MySQL, error = %w", err)
+		return nil, fmt.Errorf("failed to connect to mysql: %w", err)
 	}
 
-	md.Conn.SetConnMaxLifetime(_defaultConnMaxLifetime)
-	md.Conn.SetMaxOpenConns(_defaultMaxOpenConns)
-	md.Conn.SetMaxIdleConns(_defaultMaxIdleConns)
+	mysql.Conn.SetConnMaxLifetime(time.Minute * time.Duration(cfg.ConnectionMaxLifetime))
+	mysql.Conn.SetMaxOpenConns(cfg.MaxOpenConnection)
+	mysql.Conn.SetMaxIdleConns(cfg.MaxIdleConnection)
 
-	if err = md.Conn.Ping(); err != nil {
-		return nil, fmt.Errorf("cannot ping to MySQL, error = %w", err)
+	if err = mysql.Conn.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping mysql: %w", err)
 	}
 
-	return md, nil
+	return mysql, nil
 }
