@@ -21,7 +21,7 @@ func Run(cfg *config.Config) {
 
 	mySQL, err := mysql.NewMySQL(cfg.MySQL)
 	if err != nil {
-		l.Fatal("app - Run - dynamodb.NewDynamoDB: ", err)
+		l.Fatal("app - Run - mysql.NewMySQL: ", err)
 	}
 
 	redisClient := redis.NewRedis(cfg.Redis)

@@ -3,8 +3,10 @@ package mysql
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/idoyudha/eshop-cart/config"
 )
 
@@ -23,6 +25,7 @@ func NewMySQL(cfg config.MySQL) (*MySQL, error) {
 	mysql := &MySQL{}
 	var err error
 
+	log.Println("url", cfg.URL) // admin:password@tcp(mysql-cart:3306)/carts?parseTime=true
 	mysql.Conn, err = sql.Open(_defaultDriver, cfg.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to mysql: %w", err)
