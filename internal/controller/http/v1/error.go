@@ -50,3 +50,12 @@ func newInternalServerError(message string) *restError {
 		},
 	}
 }
+
+func newUnauthorizedError(message string) *restError {
+	return &restError{
+		Code: http.StatusUnauthorized,
+		Error: errorMessage{
+			Message: message,
+		},
+	}
+}
