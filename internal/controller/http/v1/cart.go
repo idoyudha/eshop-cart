@@ -14,10 +14,10 @@ type cartRoutes struct {
 	l  logger.Interface
 }
 
-func newCartRoutes(handler *gin.RouterGroup, uc usecase.Cart, l logger.Interface) {
+func newCartRoutes(handler *gin.RouterGroup, uc usecase.Cart, l logger.Interface, authMid gin.HandlerFunc) {
 	r := &cartRoutes{uc: uc, l: l}
 
-	h := handler.Group("/carts")
+	h := handler.Group("/carts").Use(authMid)
 	{
 		h.POST("", r.createCart)
 		h.GET("/user", r.getCartByUserID)

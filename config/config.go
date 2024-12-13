@@ -6,9 +6,10 @@ type (
 	Config struct {
 		App  `yaml:"app"`
 		HTTP `yaml:"http"`
+		Log  `yaml:"log"`
 		MySQL
 		Redis
-		Log `yaml:"log"`
+		AuthService
 	}
 
 	App struct {
@@ -34,6 +35,10 @@ type (
 
 	Log struct {
 		Level string `env-required:"true" yaml:"level" env:"LOG_LEVEL"`
+	}
+
+	AuthService struct {
+		BaseURL string `env-required:"true" env:"AUTH_SERVICE"`
 	}
 )
 
