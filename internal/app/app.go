@@ -32,7 +32,7 @@ func Run(cfg *config.Config) {
 	)
 
 	handler := gin.Default()
-	v1.NewRouter(handler, cartUseCase, l)
+	v1.NewRouter(handler, cartUseCase, l, cfg.AuthService)
 	httpServer := httpserver.New(handler, httpserver.Port(cfg.HTTP.Port))
 
 	interrupt := make(chan os.Signal, 1)
