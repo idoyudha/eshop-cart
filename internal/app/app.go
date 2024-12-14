@@ -24,7 +24,10 @@ func Run(cfg *config.Config) {
 		l.Fatal("app - Run - mysql.NewMySQL: ", err)
 	}
 
-	redisClient := redis.NewRedis(cfg.Redis)
+	redisClient, err := redis.NewRedis(cfg.Redis)
+	if err != nil {
+		l.Fatal("app - Run - redis.NewRedis: ", err)
+	}
 
 	cartUseCase := usecase.NewCartUseCase(
 		repo.NewCartRedisRepo(redisClient),
