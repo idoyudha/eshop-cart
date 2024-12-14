@@ -42,10 +42,14 @@ func (r *cartRoutes) createCart(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: get from token
-	userID, _ := uuid.NewV7()
+	userID, exist := ctx.Get(UserIDKey)
+	if !exist {
+		r.l.Error("not exist", "http - v1 - cartRoutes - createCart")
+		ctx.JSON(http.StatusInternalServerError, newInternalServerError("user id not exist"))
+		return
+	}
 
-	cart, err := CreateCartRequestToCartEntity(userID, req)
+	cart, err := CreateCartRequestToCartEntity(userID.(uuid.UUID), req)
 	if err != nil {
 		r.l.Error(err, "http - v1 - cartRoutes - createCart")
 		ctx.JSON(http.StatusInternalServerError, newInternalServerError(err.Error()))
@@ -64,10 +68,14 @@ func (r *cartRoutes) createCart(ctx *gin.Context) {
 
 // get cart by user id
 func (r *cartRoutes) getCartByUserID(ctx *gin.Context) {
-	// TODO: get from token
-	userID, _ := uuid.NewV7()
+	userID, exist := ctx.Get(UserIDKey)
+	if !exist {
+		r.l.Error("not exist", "http - v1 - cartRoutes - createCart")
+		ctx.JSON(http.StatusInternalServerError, newInternalServerError("user id not exist"))
+		return
+	}
 
-	carts, err := r.uc.GetUserCart(ctx.Request.Context(), userID)
+	carts, err := r.uc.GetUserCart(ctx.Request.Context(), userID.(uuid.UUID))
 	if err != nil {
 		r.l.Error(err, "http - v1 - cartRoutes - getCart")
 		ctx.JSON(http.StatusInternalServerError, newInternalServerError(err.Error()))
@@ -97,9 +105,14 @@ func (r *cartRoutes) updateCart(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: get from token
-	userID, _ := uuid.NewV7()
-	cart := UpdateCartRequestToCartEntity(cartID, userID, req)
+	userID, exist := ctx.Get(UserIDKey)
+	if !exist {
+		r.l.Error("not exist", "http - v1 - cartRoutes - createCart")
+		ctx.JSON(http.StatusInternalServerError, newInternalServerError("user id not exist"))
+		return
+	}
+
+	cart := UpdateCartRequestToCartEntity(cartID, userID.(uuid.UUID), req)
 
 	err = r.uc.UpdateCart(ctx.Request.Context(), &cart)
 	if err != nil {
@@ -123,10 +136,14 @@ func (r *cartRoutes) deleteCarts(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: get from token
-	userID, _ := uuid.NewV7()
+	userID, exist := ctx.Get(UserIDKey)
+	if !exist {
+		r.l.Error("not exist", "http - v1 - cartRoutes - createCart")
+		ctx.JSON(http.StatusInternalServerError, newInternalServerError("user id not exist"))
+		return
+	}
 
-	err := r.uc.DeleteCarts(ctx.Request.Context(), userID, req.CartIDs)
+	err := r.uc.DeleteCarts(ctx.Request.Context(), userID.(uuid.UUID), req.CartIDs)
 	if err != nil {
 		r.l.Error(err, "http - v1 - cartRoutes - deleteCarts")
 		ctx.JSON(http.StatusInternalServerError, newInternalServerError(err.Error()))

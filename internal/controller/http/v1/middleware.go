@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/idoyudha/eshop-cart/config"
 )
 
@@ -17,9 +19,10 @@ type authSuccessResponse struct {
 	Data    authResponse `json:"data"`
 	Message string       `json:"message"`
 }
+
 type authResponse struct {
-	UserID  string `json:"user_id"`
-	IsAdmin bool   `json:"is_admin"`
+	UserID uuid.UUID `json:"user_id"`
+	Role   string    `json:"role"`
 }
 
 func cognitoMiddleware(auth config.AuthService) gin.HandlerFunc {
@@ -31,7 +34,9 @@ func cognitoMiddleware(auth config.AuthService) gin.HandlerFunc {
 			return
 		}
 
-		authURL := fmt.Sprintf("%s/auth/%s", auth.BaseURL, tokenString)
+		tokenString = strings.TrimSpace(strings.Replace(tokenString, "Bearer ", "", 1))
+
+		authURL := fmt.Sprintf("%s/v1/auth/%s", auth.BaseURL, tokenString)
 		response, err := http.Get(authURL)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, newInternalServerError(err.Error()))
