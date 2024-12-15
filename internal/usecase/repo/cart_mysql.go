@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -81,16 +82,25 @@ func (r *CartMySQLRepo) Update(ctx context.Context, cart *entity.Cart) error {
 	return nil
 }
 
-const querySoftDeleteCart = `UPDATE carts SET deleted_at = ? WHERE id IN ?`
+const querySoftDeleteCart = `UPDATE carts SET deleted_at = ? WHERE id IN`
 
 func (r *CartMySQLRepo) DeleteMany(ctx context.Context, cartIDs uuid.UUIDs) error {
-	stmt, errStmt := r.Conn.PrepareContext(ctx, querySoftDeleteCart)
+	placeholders := "?" + strings.Repeat(",?", len(cartIDs)-1)
+	query := querySoftDeleteCart + " (" + placeholders + ")"
+
+	args := make([]interface{}, len(cartIDs)+1)
+	args[0] = time.Now()
+	for i, id := range cartIDs {
+		args[i+1] = id
+	}
+
+	stmt, errStmt := r.Conn.PrepareContext(ctx, query)
 	if errStmt != nil {
 		return errStmt
 	}
 	defer stmt.Close()
 
-	_, deleteErr := stmt.ExecContext(ctx, time.Now(), cartIDs)
+	_, deleteErr := stmt.ExecContext(ctx, args...)
 	if deleteErr != nil {
 		return deleteErr
 	}

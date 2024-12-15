@@ -21,16 +21,16 @@ func newCartRoutes(handler *gin.RouterGroup, uc usecase.Cart, l logger.Interface
 	{
 		h.POST("", r.createCart)
 		h.GET("/user", r.getCartByUserID)
-		h.PUT("/:id", r.updateCart)
+		h.PATCH("/:id", r.updateCart)
 		h.PATCH("/deletes", r.deleteCarts)
 	}
 }
 
 type CreateCartRequest struct {
-	ProductID       uuid.UUID `json:"product_id"`
-	ProductName     string    `json:"product_name"`
-	ProductPrice    float64   `json:"product_price"`
-	ProductQuantity int64     `json:"product_quantity"`
+	ProductID       uuid.UUID `json:"product_id" binding:"required"`
+	ProductName     string    `json:"product_name" binding:"required"`
+	ProductPrice    float64   `json:"product_price" binding:"required"`
+	ProductQuantity int64     `json:"product_quantity" binding:"required"`
 	Note            string    `json:"note"`
 }
 
@@ -86,8 +86,8 @@ func (r *cartRoutes) getCartByUserID(ctx *gin.Context) {
 }
 
 type UpdateCartRequest struct {
-	ProductQuantity int64  `json:"product_quantity"`
-	Note            string `json:"note"`
+	ProductQuantity int64  `json:"product_quantity" binding:"required"`
+	Note            string `json:"note" binding:"required"`
 }
 
 func (r *cartRoutes) updateCart(ctx *gin.Context) {
