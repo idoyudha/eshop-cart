@@ -65,16 +65,16 @@ func (r *CartMySQLRepo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*e
 	return carts, nil
 }
 
-const queryUpdateCart = `UPDATE carts SET product_name = ?, product_price = ?, product_quantity = ?, note = ?, updated_at = ? WHERE id = ?`
+const queryUpdateQtyAndNoteCart = `UPDATE carts SET product_quantity = ?, note = ?, updated_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL`
 
-func (r *CartMySQLRepo) Update(ctx context.Context, cart *entity.Cart) error {
-	stmt, errStmt := r.Conn.PrepareContext(ctx, queryUpdateCart)
+func (r *CartMySQLRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart) error {
+	stmt, errStmt := r.Conn.PrepareContext(ctx, queryUpdateQtyAndNoteCart)
 	if errStmt != nil {
 		return errStmt
 	}
 	defer stmt.Close()
 
-	_, updateErr := stmt.ExecContext(ctx, cart.ProductName, cart.ProductPrice, cart.ProductQuantity, cart.Note, cart.UpdatedAt, cart.ID)
+	_, updateErr := stmt.ExecContext(ctx, cart.ProductQuantity, cart.Note, cart.UpdatedAt, cart.ID, cart.UserID)
 	if updateErr != nil {
 		return updateErr
 	}

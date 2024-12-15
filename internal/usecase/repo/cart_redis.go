@@ -115,6 +115,31 @@ func (r *CartRedisRepo) GetUserCart(ctx context.Context, userID string) ([]*enti
 	return carts, nil
 }
 
+func (r *CartRedisRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart) error {
+	cartKey := getCartKey(cart.ID.String())
+
+	exists, err := r.Client.Exists(ctx, cartKey).Result()
+	if err != nil {
+		return fmt.Errorf("cart is not exist: %w", err)
+	}
+	if exists == 0 {
+		return fmt.Errorf("cart not found")
+	}
+
+	pipe := r.Client.Pipeline()
+	pipe.HSet(ctx, cartKey, map[string]interface{}{
+		"product_quantity": cart.ProductQuantity,
+		"note":             cart.Note,
+	})
+
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update cart: %w", err)
+	}
+
+	return nil
+}
+
 func (r *CartRedisRepo) DeleteCarts(ctx context.Context, userID string, cartIDs []string) error {
 	cartKeys := make([]string, len(cartIDs))
 	for i, cartID := range cartIDs {

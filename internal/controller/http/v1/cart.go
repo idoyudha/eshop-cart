@@ -114,7 +114,7 @@ func (r *cartRoutes) updateCart(ctx *gin.Context) {
 
 	cart := UpdateCartRequestToCartEntity(cartID, userID.(uuid.UUID), req)
 
-	err = r.uc.UpdateCart(ctx.Request.Context(), &cart)
+	err = r.uc.UpdateQtyAndNoteCart(ctx.Request.Context(), &cart)
 	if err != nil {
 		r.l.Error(err, "http - v1 - cartRoutes - updateCart")
 		ctx.JSON(http.StatusInternalServerError, newInternalServerError(err.Error()))
