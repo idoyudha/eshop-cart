@@ -11,9 +11,9 @@ import (
 
 const (
 	_defaultDriver          = "mysql"
-	_defaultConnMaxLifetime = time.Minute * 3
-	_defaultMaxOpenConns    = 20
-	_defaultMaxIdleConns    = 20
+	_defaultConnMaxLifetime = 2 * time.Second
+	_defaultMaxOpenConns    = 4 // (CPU cores × 2)
+	_defaultMaxIdleConns    = 10
 )
 
 type MySQL struct {

@@ -1,4 +1,4 @@
-CREATE TABLE `carts` (
+CREATE TABLE IF NOT EXISTS `carts` (
     `id` VARCHAR(36) PRIMARY KEY,
     `user_id` VARCHAR(36) NOT NULL,
     `product_id` VARCHAR(36) NOT NULL,

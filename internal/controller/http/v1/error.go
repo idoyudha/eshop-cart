@@ -2,17 +2,7 @@ package v1
 
 import (
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
-
-type response struct {
-	Error string `json:"error" example:"message"`
-}
-
-func errorResponse(c *gin.Context, code int, msg string) {
-	c.AbortWithStatusJSON(code, response{Error: msg})
-}
 
 type restError struct {
 	Code  int          `json:"code"`
