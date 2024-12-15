@@ -3,7 +3,9 @@ package repo
 import (
 	"context"
 	"fmt"
+	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/idoyudha/eshop-cart/internal/entity"
 	rClient "github.com/idoyudha/eshop-cart/pkg/redis"
 	"github.com/redis/go-redis/v9"
@@ -33,6 +35,7 @@ func getUserCartsKey(userID string) string {
 
 // store cart data as hash -> cart:{cartID}
 // add cartID to set -> user:{userID}:carts
+// TODO: just add the quantity if found the same key
 func (r *CartRedisRepo) Save(ctx context.Context, cart *entity.Cart) error {
 	cartKey := getCartKey(cart.ID.String())
 	userCartsKey := getUserCartsKey(cart.UserID.String())
@@ -63,7 +66,6 @@ func (r *CartRedisRepo) Save(ctx context.Context, cart *entity.Cart) error {
 
 func (r *CartRedisRepo) GetUserCart(ctx context.Context, userID string) ([]*entity.Cart, error) {
 	userCartKey := getUserCartsKey(userID)
-
 	cartIDs, err := r.Client.SMembers(ctx, userCartKey).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cart from redis: %w", err)
@@ -86,11 +88,27 @@ func (r *CartRedisRepo) GetUserCart(ctx context.Context, userID string) ([]*enti
 
 	carts := make([]*entity.Cart, 0, len(cartIDs))
 	for _, cmd := range commands {
-		cart := &entity.Cart{}
-		err := cmd.Scan(cart)
-		if err != nil {
+		cartData := cmd.Val()
+		if len(cartData) == 0 {
 			continue
 		}
+
+		cartID, _ := uuid.Parse(cartData["id"])
+		userID, _ := uuid.Parse(cartData["user_id"])
+		productID, _ := uuid.Parse(cartData["product_id"])
+		productQuantity, _ := strconv.ParseInt(cartData["product_quantity"], 10, 64)
+		productPrice, _ := strconv.ParseFloat(cartData["product_price"], 64)
+
+		cart := &entity.Cart{
+			ID:              cartID,
+			UserID:          userID,
+			ProductID:       productID,
+			ProductName:     cartData["product_name"],
+			ProductPrice:    productPrice,
+			ProductQuantity: productQuantity,
+			Note:            cartData["note"],
+		}
+
 		carts = append(carts, cart)
 	}
 
