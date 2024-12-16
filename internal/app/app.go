@@ -11,6 +11,7 @@ import (
 	"github.com/idoyudha/eshop-cart/internal/usecase"
 	"github.com/idoyudha/eshop-cart/internal/usecase/repo"
 	"github.com/idoyudha/eshop-cart/pkg/httpserver"
+	"github.com/idoyudha/eshop-cart/pkg/kafka"
 	"github.com/idoyudha/eshop-cart/pkg/logger"
 	"github.com/idoyudha/eshop-cart/pkg/mysql"
 	"github.com/idoyudha/eshop-cart/pkg/redis"
@@ -18,6 +19,17 @@ import (
 
 func Run(cfg *config.Config) {
 	l := logger.New(cfg.Log.Level)
+
+	kafkaConsumer, err := kafka.NewKafkaConsumer(
+		cfg.Kafka.Broker,
+		"cart-service",
+		[]string{"product-updated"},
+		l,
+	)
+	if err != nil {
+		l.Fatal("app - Run - kafka.NewKafkaConsumer: ", err)
+	}
+	defer kafkaConsumer.Close()
 
 	mySQL, err := mysql.NewMySQL(cfg.MySQL)
 	if err != nil {

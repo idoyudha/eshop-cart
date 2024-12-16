@@ -10,6 +10,7 @@ type (
 		MySQL
 		Redis
 		AuthService
+		Kafka
 	}
 
 	App struct {
@@ -39,6 +40,10 @@ type (
 
 	AuthService struct {
 		BaseURL string `env-required:"true" env:"AUTH_SERVICE"`
+	}
+
+	Kafka struct {
+		Broker string `env-required:"true" env:"KAFKA_BROKER"`
 	}
 )
 

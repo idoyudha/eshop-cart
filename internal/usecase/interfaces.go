@@ -26,6 +26,7 @@ type (
 	Cart interface {
 		CreateCart(context.Context, *entity.Cart) error
 		GetUserCart(context.Context, uuid.UUID) ([]*entity.Cart, error)
+		// UpdateProductNameAndPriceCart(context.Context, *entity.Cart) error
 		UpdateQtyAndNoteCart(context.Context, *entity.Cart) error
 		DeleteCarts(context.Context, uuid.UUID, uuid.UUIDs) error
 	}
