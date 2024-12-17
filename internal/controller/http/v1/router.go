@@ -15,8 +15,8 @@ func NewRouter(
 	l logger.Interface,
 	auth config.AuthService,
 ) {
-	handler.Use(gin.Logger())
-	handler.Use(gin.Recovery())
+	// handler.Use(gin.Logger())
+	// handler.Use(gin.Recovery())
 
 	handler.GET("/health", func(c *gin.Context) {
 		c.Status(http.StatusOK)

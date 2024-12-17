@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	productGroup       = "product-group"
-	productUpdateTopic = "product-updated"
+	ProductGroup       = "product-group"
+	ProductUpdateTopic = "product-updated"
 )
 
 type ConsumerServer struct {
@@ -18,7 +18,7 @@ type ConsumerServer struct {
 func NewKafkaConsumer(brokerURL string) (*ConsumerServer, error) {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": brokerURL,
-		"group.id":          productGroup,
+		"group.id":          ProductGroup,
 		"auto.offset.reset": "earliest",
 	})
 	if err != nil {
@@ -26,7 +26,7 @@ func NewKafkaConsumer(brokerURL string) (*ConsumerServer, error) {
 	}
 
 	err = c.SubscribeTopics([]string{
-		productUpdateTopic,
+		ProductUpdateTopic,
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to subscribe to topics: %v", err)

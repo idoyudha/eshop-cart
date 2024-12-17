@@ -42,13 +42,18 @@ func Run(cfg *config.Config) {
 		repo.NewCartMySQLRepo(mySQL),
 	)
 
-	// Kafka Consumer
-	v1Kafka.KafkaNewRouter(cartUseCase, l, kafkaConsumer)
-
 	// HTTP Server
 	handler := gin.Default()
 	v1Http.NewRouter(handler, cartUseCase, l, cfg.AuthService)
 	httpServer := httpserver.New(handler, httpserver.Port(cfg.HTTP.Port))
+
+	// Kafka Consumer
+	kafkaErrChan := make(chan error, 1)
+	go func() {
+		if err := v1Kafka.KafkaNewRouter(cartUseCase, l, kafkaConsumer); err != nil {
+			kafkaErrChan <- err
+		}
+	}()
 
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)

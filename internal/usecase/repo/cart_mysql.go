@@ -82,6 +82,23 @@ func (r *CartMySQLRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart)
 	return nil
 }
 
+const queryUpdateNameAndPriceCart = `UPDATE carts SET product_name = ?, product_price = ?, updated_at = ? WHERE product_id = ? AND deleted_at IS NOT NULL`
+
+func (r *CartMySQLRepo) UpdateNameAndPrice(ctx context.Context, cart *entity.Cart) error {
+	stmt, errStmt := r.Conn.PrepareContext(ctx, queryUpdateNameAndPriceCart)
+	if errStmt != nil {
+		return errStmt
+	}
+	defer stmt.Close()
+
+	_, updateErr := stmt.ExecContext(ctx, cart.ProductName, cart.ProductPrice, cart.UpdatedAt, cart.ProductID)
+	if updateErr != nil {
+		return updateErr
+	}
+
+	return nil
+}
+
 const querySoftDeleteCart = `UPDATE carts SET deleted_at = ? WHERE id IN`
 
 func (r *CartMySQLRepo) DeleteMany(ctx context.Context, cartIDs uuid.UUIDs) error {

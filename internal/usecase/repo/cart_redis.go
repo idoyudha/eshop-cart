@@ -140,6 +140,48 @@ func (r *CartRedisRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart)
 	return nil
 }
 
+func (r *CartRedisRepo) UpdateNameAndPrice(ctx context.Context, cart *entity.Cart) error {
+	// get all cart keys from Redis that contain this product
+	pattern := fmt.Sprintf("cart:*")
+	iter := r.Client.Scan(ctx, 0, pattern, 0).Iterator()
+
+	pipe := r.Client.Pipeline()
+	cartUpdated := false
+
+	for iter.Next(ctx) {
+		cartKey := iter.Val()
+
+		// get the product ID from this cart
+		cartProductID, err := r.Client.HGet(ctx, cartKey, "product_id").Result()
+		if err != nil {
+			continue
+		}
+
+		// if this cart contains our target product, update it
+		if cartProductID == cart.ProductID.String() {
+			pipe.HSet(ctx, cartKey, map[string]interface{}{
+				"product_name":  cart.ProductName,
+				"product_price": cart.ProductPrice,
+			})
+			cartUpdated = true
+		}
+	}
+
+	if err := iter.Err(); err != nil {
+		return fmt.Errorf("error scanning carts: %w", err)
+	}
+
+	// execute pipeline if we found carts to update
+	if cartUpdated {
+		_, err := pipe.Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update carts: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func (r *CartRedisRepo) DeleteCarts(ctx context.Context, userID string, cartIDs []string) error {
 	cartKeys := make([]string, len(cartIDs))
 	for i, cartID := range cartIDs {
