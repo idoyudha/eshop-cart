@@ -7,7 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/idoyudha/eshop-cart/config"
-	v1 "github.com/idoyudha/eshop-cart/internal/controller/http/v1"
+	v1Http "github.com/idoyudha/eshop-cart/internal/controller/http/v1"
+	v1Kafka "github.com/idoyudha/eshop-cart/internal/controller/kafka/v1"
 	"github.com/idoyudha/eshop-cart/internal/usecase"
 	"github.com/idoyudha/eshop-cart/internal/usecase/repo"
 	"github.com/idoyudha/eshop-cart/pkg/httpserver"
@@ -20,12 +21,7 @@ import (
 func Run(cfg *config.Config) {
 	l := logger.New(cfg.Log.Level)
 
-	kafkaConsumer, err := kafka.NewKafkaConsumer(
-		cfg.Kafka.Broker,
-		"cart-service",
-		[]string{"product-updated"},
-		l,
-	)
+	kafkaConsumer, err := kafka.NewKafkaConsumer(cfg.Kafka.Broker)
 	if err != nil {
 		l.Fatal("app - Run - kafka.NewKafkaConsumer: ", err)
 	}
@@ -46,8 +42,12 @@ func Run(cfg *config.Config) {
 		repo.NewCartMySQLRepo(mySQL),
 	)
 
+	// Kafka Consumer
+	v1Kafka.KafkaNewRouter(cartUseCase, l, kafkaConsumer)
+
+	// HTTP Server
 	handler := gin.Default()
-	v1.NewRouter(handler, cartUseCase, l, cfg.AuthService)
+	v1Http.NewRouter(handler, cartUseCase, l, cfg.AuthService)
 	httpServer := httpserver.New(handler, httpserver.Port(cfg.HTTP.Port))
 
 	interrupt := make(chan os.Signal, 1)
