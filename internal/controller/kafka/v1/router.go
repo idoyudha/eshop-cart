@@ -31,7 +31,7 @@ func KafkaNewRouter(
 		default:
 			ev, err := c.Consumer.ReadMessage(100 * time.Millisecond)
 			if err != nil {
-				log.Println("CONSUME CART SERVICE!!")
+				// log.Println("CONSUME CART SERVICE!!")
 				// Errors are informational and automatically handled by the consumer
 				continue
 			}
