@@ -98,7 +98,7 @@ func (r *kafkaConsumerRoutes) handleProductUpdated(msg *kafka.Message) error {
 		return err
 	}
 
-	r.l.Info("Received product update: %+v", message)
+	r.l.Info("Product updated", "http - v1 - kafkaConsumerRoutes - handleProductUpdated")
 
 	return nil
 }
