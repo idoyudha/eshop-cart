@@ -150,7 +150,9 @@ func (r *cartRoutes) updateCart(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, newUpdateSuccess(cart))
+	cartResponse := cartEntityToUpdateCartResponse(cart)
+
+	ctx.JSON(http.StatusOK, newUpdateSuccess(cartResponse))
 }
 
 type deleteCartsRequest struct {
