@@ -7,14 +7,24 @@ import (
 )
 
 type Cart struct {
-	ID              uuid.UUID `json:"id"`
-	UserID          uuid.UUID `json:"user_id"`
-	ProductID       uuid.UUID `json:"product_id"`
-	ProductName     string    `json:"product_name"`
-	ProductPrice    float64   `json:"product_price"`
-	ProductQuantity int64     `json:"product_quantity"`
-	Note            string    `json:"note"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
-	DeletedAt       time.Time `json:"deleted_at"`
+	ID              uuid.UUID
+	UserID          uuid.UUID
+	ProductID       uuid.UUID
+	ProductName     string
+	ProductPrice    float64
+	ProductQuantity int64
+	Note            string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	DeletedAt       time.Time
+}
+
+func (c *Cart) GenerateCartID() error {
+	cartID, err := uuid.NewV7()
+	if err != nil {
+		return err
+	}
+
+	c.ID = cartID
+	return nil
 }

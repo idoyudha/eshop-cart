@@ -26,7 +26,7 @@ func newCartRoutes(handler *gin.RouterGroup, uc usecase.Cart, l logger.Interface
 	}
 }
 
-type CreateCartRequest struct {
+type createCartRequest struct {
 	ProductID       uuid.UUID `json:"product_id" binding:"required"`
 	ProductName     string    `json:"product_name" binding:"required"`
 	ProductPrice    float64   `json:"product_price" binding:"required"`
@@ -34,8 +34,18 @@ type CreateCartRequest struct {
 	Note            string    `json:"note"`
 }
 
+type createCartResponse struct {
+	ID              uuid.UUID `json:"id"`
+	UserID          uuid.UUID `json:"user_id"`
+	ProductID       uuid.UUID `json:"product_id"`
+	ProductName     string    `json:"product_name"`
+	ProductPrice    float64   `json:"product_price"`
+	ProductQuantity int64     `json:"product_quantity"`
+	Note            string    `json:"note"`
+}
+
 func (r *cartRoutes) createCart(ctx *gin.Context) {
-	var req CreateCartRequest
+	var req createCartRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		r.l.Error(err, "http - v1 - cartRoutes - createCart")
 		ctx.JSON(http.StatusBadRequest, newBadRequestError(err.Error()))
@@ -49,21 +59,28 @@ func (r *cartRoutes) createCart(ctx *gin.Context) {
 		return
 	}
 
-	cart, err := CreateCartRequestToCartEntity(userID.(uuid.UUID), req)
+	cartEntity := createCartRequestToCartEntity(userID.(uuid.UUID), req)
+
+	cart, err := r.uc.CreateCart(ctx.Request.Context(), &cartEntity)
 	if err != nil {
 		r.l.Error(err, "http - v1 - cartRoutes - createCart")
 		ctx.JSON(http.StatusInternalServerError, newInternalServerError(err.Error()))
 		return
 	}
 
-	err = r.uc.CreateCart(ctx.Request.Context(), &cart)
-	if err != nil {
-		r.l.Error(err, "http - v1 - cartRoutes - createCart")
-		ctx.JSON(http.StatusInternalServerError, newInternalServerError(err.Error()))
-		return
-	}
+	cartResponse := cartEntityToCreateCartResponse(cart)
 
-	ctx.JSON(http.StatusCreated, newCreateSuccess(cart))
+	ctx.JSON(http.StatusCreated, newCreateSuccess(cartResponse))
+}
+
+type getCartResponse struct {
+	ID              uuid.UUID `json:"id"`
+	UserID          uuid.UUID `json:"user_id"`
+	ProductID       uuid.UUID `json:"product_id"`
+	ProductName     string    `json:"product_name"`
+	ProductPrice    float64   `json:"product_price"`
+	ProductQuantity int64     `json:"product_quantity"`
+	Note            string    `json:"note"`
 }
 
 // get cart by user id
@@ -82,12 +99,24 @@ func (r *cartRoutes) getCartByUserID(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, newGetSuccess(carts))
+	cartsResponse := cartEntitiesToGetCartResponse(carts)
+
+	ctx.JSON(http.StatusOK, newGetSuccess(cartsResponse))
 }
 
-type UpdateCartRequest struct {
+type updateCartRequest struct {
 	ProductQuantity int64  `json:"product_quantity" binding:"required"`
 	Note            string `json:"note" binding:"required"`
+}
+
+type updateCartResponse struct {
+	ID              uuid.UUID `json:"id"`
+	UserID          uuid.UUID `json:"user_id"`
+	ProductID       uuid.UUID `json:"product_id"`
+	ProductName     string    `json:"product_name"`
+	ProductPrice    float64   `json:"product_price"`
+	ProductQuantity int64     `json:"product_quantity"`
+	Note            string    `json:"note"`
 }
 
 func (r *cartRoutes) updateCart(ctx *gin.Context) {
@@ -98,7 +127,7 @@ func (r *cartRoutes) updateCart(ctx *gin.Context) {
 		return
 	}
 
-	var req UpdateCartRequest
+	var req updateCartRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		r.l.Error(err, "http - v1 - cartRoutes - createCart")
 		ctx.JSON(http.StatusBadRequest, newBadRequestError(err.Error()))
@@ -112,7 +141,7 @@ func (r *cartRoutes) updateCart(ctx *gin.Context) {
 		return
 	}
 
-	cart := UpdateCartRequestToCartEntity(cartID, userID.(uuid.UUID), req)
+	cart := updateCartRequestToCartEntity(cartID, userID.(uuid.UUID), req)
 
 	err = r.uc.UpdateQtyAndNoteCart(ctx.Request.Context(), &cart)
 	if err != nil {
@@ -124,12 +153,12 @@ func (r *cartRoutes) updateCart(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, newUpdateSuccess(cart))
 }
 
-type DeleteCartsRequest struct {
+type deleteCartsRequest struct {
 	CartIDs uuid.UUIDs `json:"cart_ids"`
 }
 
 func (r *cartRoutes) deleteCarts(ctx *gin.Context) {
-	var req DeleteCartsRequest
+	var req deleteCartsRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		r.l.Error(err, "http - v1 - cartRoutes - deleteCarts")
 		ctx.JSON(http.StatusBadRequest, newBadRequestError(err.Error()))

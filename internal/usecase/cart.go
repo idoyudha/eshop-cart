@@ -19,9 +19,14 @@ func NewCartUseCase(repoRedis CartRedisRepo, repoMySQL CartMySQLRepo) *CartUseCa
 	}
 }
 
-func (u *CartUseCase) CreateCart(ctx context.Context, cart *entity.Cart) error {
+func (u *CartUseCase) CreateCart(ctx context.Context, cart *entity.Cart) (entity.Cart, error) {
+	err := cart.GenerateCartID()
+	if err != nil {
+		return entity.Cart{}, err
+	}
+
 	if errInsert := u.repoMySQL.Insert(ctx, cart); errInsert != nil {
-		return errInsert
+		return entity.Cart{}, errInsert
 	}
 
 	errSave := u.repoRedis.Save(ctx, cart)
@@ -29,10 +34,10 @@ func (u *CartUseCase) CreateCart(ctx context.Context, cart *entity.Cart) error {
 	// delete cart from mysql if save to redis failed
 	if errSave != nil {
 		_ = u.repoMySQL.DeleteOne(ctx, cart.ID)
-		return errSave
+		return entity.Cart{}, errSave
 	}
 
-	return nil
+	return *cart, nil
 }
 
 func (u *CartUseCase) GetUserCart(ctx context.Context, userID uuid.UUID) ([]*entity.Cart, error) {

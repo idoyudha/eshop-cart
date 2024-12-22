@@ -7,13 +7,8 @@ import (
 	"github.com/idoyudha/eshop-cart/internal/entity"
 )
 
-func CreateCartRequestToCartEntity(userID uuid.UUID, req CreateCartRequest) (entity.Cart, error) {
-	cartID, err := uuid.NewV7()
-	if err != nil {
-		return entity.Cart{}, err
-	}
+func createCartRequestToCartEntity(userID uuid.UUID, req createCartRequest) entity.Cart {
 	return entity.Cart{
-		ID:              cartID,
 		UserID:          userID,
 		ProductID:       req.ProductID,
 		ProductName:     req.ProductName,
@@ -22,15 +17,55 @@ func CreateCartRequestToCartEntity(userID uuid.UUID, req CreateCartRequest) (ent
 		Note:            req.Note,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
-	}, nil
+	}
 }
 
-func UpdateCartRequestToCartEntity(cartID uuid.UUID, userID uuid.UUID, req UpdateCartRequest) entity.Cart {
+func cartEntityToCreateCartResponse(cart entity.Cart) createCartResponse {
+	return createCartResponse{
+		ID:              cart.ID,
+		UserID:          cart.UserID,
+		ProductID:       cart.ProductID,
+		ProductName:     cart.ProductName,
+		ProductPrice:    cart.ProductPrice,
+		ProductQuantity: cart.ProductQuantity,
+		Note:            cart.Note,
+	}
+}
+
+func cartEntitiesToGetCartResponse(cart []*entity.Cart) []getCartResponse {
+	var res []getCartResponse
+	for _, c := range cart {
+		res = append(res, getCartResponse{
+			ID:              c.ID,
+			UserID:          c.UserID,
+			ProductID:       c.ProductID,
+			ProductName:     c.ProductName,
+			ProductPrice:    c.ProductPrice,
+			ProductQuantity: c.ProductQuantity,
+			Note:            c.Note,
+		})
+	}
+	return res
+}
+
+func updateCartRequestToCartEntity(cartID uuid.UUID, userID uuid.UUID, req updateCartRequest) entity.Cart {
 	return entity.Cart{
 		ID:              cartID,
 		UserID:          userID,
 		ProductQuantity: req.ProductQuantity,
 		Note:            req.Note,
 		UpdatedAt:       time.Now(),
+	}
+}
+
+func cartEntityToUpdateCartResponse(cart entity.Cart) updateCartResponse {
+	return updateCartResponse{
+		ID:              cart.ID,
+		UserID:          cart.UserID,
+		ProductID:       cart.ProductID,
+		ProductName:     cart.ProductName,
+		ProductPrice:    cart.ProductPrice,
+		ProductQuantity: cart.ProductQuantity,
+		Note:            cart.Note,
 	}
 }
