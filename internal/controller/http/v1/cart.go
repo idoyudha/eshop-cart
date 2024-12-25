@@ -194,7 +194,7 @@ type checkoutAddressRequest struct {
 	Street  string `json:"street" binding:"required"`
 	City    string `json:"city" binding:"required"`
 	State   string `json:"state" binding:"required"`
-	ZipCode string `json:"zip_code" binding:"required"`
+	ZipCode string `json:"zipcode" binding:"required"`
 }
 
 func (r *cartRoutes) checkOutCarts(ctx *gin.Context) {

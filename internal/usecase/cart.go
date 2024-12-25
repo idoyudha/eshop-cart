@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/idoyudha/eshop-cart/config"
 	"github.com/idoyudha/eshop-cart/internal/entity"
+	"github.com/idoyudha/eshop-cart/internal/utils"
 )
 
 type CartUseCase struct {
@@ -140,6 +142,12 @@ type createAddressOrderRequest struct {
 	Note    string `json:"note"`
 }
 
+type restSuccessCreateOrder struct {
+	Code    int           `json:"code"`
+	Data    orderResponse `json:"data"`
+	Message string        `json:"message"`
+}
+
 type orderResponse struct {
 	Status     string               `json:"status"`
 	TotalPrice float64              `json:"total_price"`
@@ -164,14 +172,16 @@ type addressOrderResponse struct {
 	Note    string    `json:"note"`
 }
 
-func cartToCreateOrderRequest(carts []*entity.Cart, address *entity.CheckoutAddress) createOrderRequest {
+func cartToCreateOrderRequest(carts []*entity.Cart, cartIDs uuid.UUIDs, address *entity.CheckoutAddress) createOrderRequest {
 	var items []createItemsOrderRequest
 	for _, cart := range carts {
-		items = append(items, createItemsOrderRequest{
-			ProductID: cart.ProductID,
-			Quantity:  cart.ProductQuantity,
-			Price:     cart.ProductPrice,
-		})
+		if utils.IDInSliceUUID(cart.ID, cartIDs) {
+			items = append(items, createItemsOrderRequest{
+				ProductID: cart.ProductID,
+				Quantity:  cart.ProductQuantity,
+				Price:     cart.ProductPrice,
+			})
+		}
 	}
 	return createOrderRequest{
 		Items: items,
@@ -193,7 +203,7 @@ func (u *CartUseCase) CheckOutCarts(ctx context.Context, userID uuid.UUID, cartI
 
 	// 2. request create order
 	createOrderURL := fmt.Sprintf("%s/v1/orders", u.orderService.BaseURL)
-	createOrderReq := cartToCreateOrderRequest(carts, address)
+	createOrderReq := cartToCreateOrderRequest(carts, cartIDs, address)
 
 	requestBody, err := json.Marshal(createOrderReq)
 	if err != nil {
@@ -213,6 +223,16 @@ func (u *CartUseCase) CheckOutCarts(ctx context.Context, userID uuid.UUID, cartI
 		return fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var successCreateOrder restSuccessCreateOrder
+	if err := json.Unmarshal(body, &successCreateOrder); err != nil {
+		return fmt.Errorf("failed to unmarshal response body: %w", err)
+	}
 
 	if resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("failed to create order: %w", err)
