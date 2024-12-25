@@ -45,11 +45,13 @@ func KafkaNewRouter(
 			run = false
 			return nil
 		default:
-			ev, err := c.Consumer.ReadMessage(100 * time.Millisecond)
+			// l.Debug("Attempting to read message...")
+			ev, err := c.Consumer.ReadMessage(3 * time.Second)
 			if err != nil {
 				// log.Println("CONSUME CART SERVICE!!")
 				// Errors are informational and automatically handled by the consumer
-				if err.(kafka.Error).Code() == kafka.ErrTimedOut {
+				if kerr, ok := err.(kafka.Error); ok && kerr.Code() == kafka.ErrTimedOut {
+					// l.Debug("Timeout waiting for message, continuing...")
 					continue
 				}
 				l.Error("Error reading message: ", err)
