@@ -23,6 +23,7 @@ func newCartRoutes(handler *gin.RouterGroup, uc usecase.Cart, l logger.Interface
 		h.GET("/user", r.getCartByUserID)
 		h.PATCH("/:id", r.updateCart)
 		h.PATCH("/deletes", r.deleteCarts)
+		h.POST("/checkout", r.checkOutCarts)
 	}
 }
 
@@ -182,4 +183,56 @@ func (r *cartRoutes) deleteCarts(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, newDeleteSuccess())
+}
+
+type checkoutCartsRequest struct {
+	CartIDs uuid.UUIDs             `json:"cart_ids" binding:"required"`
+	Address checkoutAddressRequest `json:"address" binding:"required"`
+}
+
+type checkoutAddressRequest struct {
+	Street  string `json:"street" binding:"required"`
+	City    string `json:"city" binding:"required"`
+	State   string `json:"state" binding:"required"`
+	ZipCode string `json:"zip_code" binding:"required"`
+}
+
+func (r *cartRoutes) checkOutCarts(ctx *gin.Context) {
+	var req checkoutCartsRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		r.l.Error(err, "http - v1 - cartRoutes - checkOutCarts")
+		ctx.JSON(http.StatusBadRequest, newBadRequestError(err.Error()))
+		return
+	}
+
+	userID, exist := ctx.Get(UserIDKey)
+	if !exist {
+		r.l.Error("not exist", "http - v1 - cartRoutes - createCart")
+		ctx.JSON(http.StatusInternalServerError, newInternalServerError("user id not exist"))
+		return
+	}
+
+	token, exist := ctx.Get(TokenKey)
+	if !exist {
+		r.l.Error("not exist", "http - v1 - orderRoutes - createOrder")
+		ctx.JSON(http.StatusInternalServerError, newInternalServerError("token not exist"))
+		return
+	}
+
+	address := checkoutAddressRequestToCheckoutAddressEntity(req.Address)
+
+	err := r.uc.CheckOutCarts(
+		ctx.Request.Context(),
+		userID.(uuid.UUID),
+		req.CartIDs,
+		&address,
+		token.(string),
+	)
+	if err != nil {
+		r.l.Error(err, "http - v1 - cartRoutes - checkOutCarts")
+		ctx.JSON(http.StatusInternalServerError, newInternalServerError(err.Error()))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, newCheckoutSuccess())
 }

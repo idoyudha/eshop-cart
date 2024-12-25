@@ -11,6 +11,7 @@ type (
 		Redis
 		AuthService
 		Kafka
+		OrderService
 	}
 
 	App struct {
@@ -44,6 +45,10 @@ type (
 
 	Kafka struct {
 		Broker string `env-required:"true" env:"KAFKA_BROKER"`
+	}
+
+	OrderService struct {
+		BaseURL string `env-required:"true" env:"ORDER_SERVICE"`
 	}
 )
 

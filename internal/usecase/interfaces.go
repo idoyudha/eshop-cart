@@ -31,5 +31,6 @@ type (
 		UpdateProductNameAndPriceCart(context.Context, *entity.Cart) error
 		UpdateQtyAndNoteCart(context.Context, *entity.Cart) error
 		DeleteCarts(context.Context, uuid.UUID, uuid.UUIDs) error
+		CheckOutCarts(context.Context, uuid.UUID, uuid.UUIDs, *entity.CheckoutAddress, string) error
 	}
 )

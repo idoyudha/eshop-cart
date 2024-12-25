@@ -38,3 +38,10 @@ func newDeleteSuccess() restSuccess {
 		Message: "success delete",
 	}
 }
+
+func newCheckoutSuccess() restSuccess {
+	return restSuccess{
+		Code:    http.StatusOK,
+		Message: "success checkout",
+	}
+}

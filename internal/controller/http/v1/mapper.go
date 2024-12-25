@@ -69,3 +69,12 @@ func cartEntityToUpdateCartResponse(cart entity.Cart) updateCartResponse {
 		Note:            cart.Note,
 	}
 }
+
+func checkoutAddressRequestToCheckoutAddressEntity(req checkoutAddressRequest) entity.CheckoutAddress {
+	return entity.CheckoutAddress{
+		Street:  req.Street,
+		City:    req.City,
+		State:   req.State,
+		ZipCode: req.ZipCode,
+	}
+}

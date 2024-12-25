@@ -40,6 +40,7 @@ func Run(cfg *config.Config) {
 	cartUseCase := usecase.NewCartUseCase(
 		repo.NewCartRedisRepo(redisClient),
 		repo.NewCartMySQLRepo(mySQL),
+		cfg.OrderService,
 	)
 
 	// HTTP Server

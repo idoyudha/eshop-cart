@@ -1,21 +1,32 @@
 package usecase
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/idoyudha/eshop-cart/config"
 	"github.com/idoyudha/eshop-cart/internal/entity"
 )
 
 type CartUseCase struct {
-	repoRedis CartRedisRepo
-	repoMySQL CartMySQLRepo
+	repoRedis    CartRedisRepo
+	repoMySQL    CartMySQLRepo
+	orderService config.OrderService
 }
 
-func NewCartUseCase(repoRedis CartRedisRepo, repoMySQL CartMySQLRepo) *CartUseCase {
+func NewCartUseCase(
+	repoRedis CartRedisRepo,
+	repoMySQL CartMySQLRepo,
+	orderService config.OrderService,
+) *CartUseCase {
 	return &CartUseCase{
 		repoRedis,
 		repoMySQL,
+		orderService,
 	}
 }
 
@@ -25,6 +36,8 @@ func (u *CartUseCase) CreateCart(ctx context.Context, cart *entity.Cart) (entity
 		return entity.Cart{}, err
 	}
 
+	// TODO: check if cart already exist with same user id and product id
+	// if exist, then update the qty and note
 	if errInsert := u.repoMySQL.Insert(ctx, cart); errInsert != nil {
 		return entity.Cart{}, errInsert
 	}
@@ -103,6 +116,111 @@ func (u *CartUseCase) DeleteCarts(ctx context.Context, userID uuid.UUID, cartIDs
 	}
 	if errDelete := u.repoRedis.DeleteCarts(ctx, userID.String(), redisCartIDs); errDelete != nil {
 		return errDelete
+	}
+
+	return nil
+}
+
+type createOrderRequest struct {
+	Items   []createItemsOrderRequest `json:"items"`
+	Address createAddressOrderRequest `json:"address"`
+}
+
+type createItemsOrderRequest struct {
+	ProductID uuid.UUID `json:"product_id"`
+	Quantity  int64     `json:"quantity"`
+	Price     float64   `json:"price"`
+}
+
+type createAddressOrderRequest struct {
+	Street  string `json:"street"`
+	City    string `json:"city"`
+	State   string `json:"state"`
+	ZipCode string `json:"zipcode"`
+	Note    string `json:"note"`
+}
+
+type orderResponse struct {
+	Status     string               `json:"status"`
+	TotalPrice float64              `json:"total_price"`
+	Items      []itemsOrderResponse `json:"items"`
+	Address    addressOrderResponse `json:"address"`
+}
+
+type itemsOrderResponse struct {
+	OrderID   uuid.UUID `json:"order_id"`
+	ProductID uuid.UUID `json:"product_id"`
+	Price     float64   `json:"price"`
+	Quantity  int64     `json:"quantity"`
+	Note      string    `json:"note"`
+}
+
+type addressOrderResponse struct {
+	OrderID uuid.UUID `json:"order_id"`
+	Street  string    `json:"street"`
+	City    string    `json:"city"`
+	State   string    `json:"state"`
+	ZipCode string    `json:"zipcode"`
+	Note    string    `json:"note"`
+}
+
+func cartToCreateOrderRequest(carts []*entity.Cart, address *entity.CheckoutAddress) createOrderRequest {
+	var items []createItemsOrderRequest
+	for _, cart := range carts {
+		items = append(items, createItemsOrderRequest{
+			ProductID: cart.ProductID,
+			Quantity:  cart.ProductQuantity,
+			Price:     cart.ProductPrice,
+		})
+	}
+	return createOrderRequest{
+		Items: items,
+		Address: createAddressOrderRequest{
+			Street:  address.Street,
+			City:    address.City,
+			State:   address.State,
+			ZipCode: address.ZipCode,
+		},
+	}
+}
+
+func (u *CartUseCase) CheckOutCarts(ctx context.Context, userID uuid.UUID, cartIDs uuid.UUIDs, address *entity.CheckoutAddress, token string) error {
+	// 1. get cart from redis
+	carts, err := u.GetUserCart(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get cart: %w", err)
+	}
+
+	// 2. request create order
+	createOrderURL := fmt.Sprintf("%s/v1/orders", u.orderService.BaseURL)
+	createOrderReq := cartToCreateOrderRequest(carts, address)
+
+	requestBody, err := json.Marshal(createOrderReq)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, createOrderURL, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("failed to create order: %w", err)
+	}
+
+	// 3. delete cart from mysql and redis
+	if errDelete := u.DeleteCarts(ctx, userID, cartIDs); errDelete != nil {
+		return fmt.Errorf("failed to delete cart: %w", errDelete)
 	}
 
 	return nil
