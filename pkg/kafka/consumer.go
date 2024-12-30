@@ -25,7 +25,6 @@ func NewKafkaConsumer(brokerURL string) (*ConsumerServer, error) {
 		"group.id":              ProductGroup,
 		"auto.offset.reset":     "earliest",
 		"session.timeout.ms":    6000,
-		"debug":                 "consumer",
 		"heartbeat.interval.ms": 2000,
 		"metadata.max.age.ms":   900000,
 	})
