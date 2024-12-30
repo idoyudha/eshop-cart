@@ -22,6 +22,7 @@ type (
 		GetUserCart(context.Context, string) ([]*entity.Cart, error)
 		UpdateQtyAndNote(context.Context, *entity.Cart) error
 		UpdateNameAndPrice(context.Context, *entity.Cart) error
+		DeleteCart(context.Context, string, string) error
 		DeleteCarts(context.Context, string, []string) error
 	}
 
@@ -30,6 +31,7 @@ type (
 		GetUserCart(context.Context, uuid.UUID) ([]*entity.Cart, error)
 		UpdateProductNameAndPriceCart(context.Context, *entity.Cart) error
 		UpdateQtyAndNoteCart(context.Context, *entity.Cart) error
+		DeleteCart(context.Context, uuid.UUID, uuid.UUID) error
 		DeleteCarts(context.Context, uuid.UUID, uuid.UUIDs) error
 		CheckOutCarts(context.Context, uuid.UUID, uuid.UUIDs, *entity.CheckoutAddress, string) error
 	}

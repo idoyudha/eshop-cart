@@ -107,6 +107,18 @@ func (u *CartUseCase) UpdateProductNameAndPriceCart(ctx context.Context, cart *e
 	return nil
 }
 
+func (u *CartUseCase) DeleteCart(ctx context.Context, userID uuid.UUID, cartID uuid.UUID) error {
+	if errDelete := u.repoMySQL.DeleteOne(ctx, cartID); errDelete != nil {
+		return errDelete
+	}
+
+	if errDelete := u.repoRedis.DeleteCart(ctx, userID.String(), cartID.String()); errDelete != nil {
+		return errDelete
+	}
+
+	return nil
+}
+
 func (u *CartUseCase) DeleteCarts(ctx context.Context, userID uuid.UUID, cartIDs uuid.UUIDs) error {
 	if errDelete := u.repoMySQL.DeleteMany(ctx, cartIDs); errDelete != nil {
 		return errDelete

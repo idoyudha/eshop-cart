@@ -22,6 +22,7 @@ func newCartRoutes(handler *gin.RouterGroup, uc usecase.Cart, l logger.Interface
 		h.POST("", r.createCart)
 		h.GET("/user", r.getCartByUserID)
 		h.PATCH("/:id", r.updateCart)
+		h.DELETE("/:id", r.deleteCart)
 		h.PATCH("/deletes", r.deleteCarts)
 		h.POST("/checkout", r.checkOutCarts)
 	}
@@ -107,7 +108,7 @@ func (r *cartRoutes) getCartByUserID(ctx *gin.Context) {
 
 type updateCartRequest struct {
 	ProductQuantity int64  `json:"product_quantity" binding:"required"`
-	Note            string `json:"note" binding:"required"`
+	Note            string `json:"note"`
 }
 
 type updateCartResponse struct {
@@ -154,6 +155,31 @@ func (r *cartRoutes) updateCart(ctx *gin.Context) {
 	cartResponse := cartEntityToUpdateCartResponse(cart)
 
 	ctx.JSON(http.StatusOK, newUpdateSuccess(cartResponse))
+}
+
+func (r *cartRoutes) deleteCart(ctx *gin.Context) {
+	cartID, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		r.l.Error(err, "http - v1 - cartRoutes - deleteCart")
+		ctx.JSON(http.StatusBadRequest, newBadRequestError(err.Error()))
+		return
+	}
+
+	userID, exist := ctx.Get(UserIDKey)
+	if !exist {
+		r.l.Error("not exist", "http - v1 - cartRoutes - createCart")
+		ctx.JSON(http.StatusInternalServerError, newInternalServerError("user id not exist"))
+		return
+	}
+
+	err = r.uc.DeleteCart(ctx.Request.Context(), userID.(uuid.UUID), cartID)
+	if err != nil {
+		r.l.Error(err, "http - v1 - cartRoutes - deleteCart")
+		ctx.JSON(http.StatusInternalServerError, newInternalServerError(err.Error()))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, newDeleteSuccess())
 }
 
 type deleteCartsRequest struct {

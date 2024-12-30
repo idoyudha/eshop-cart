@@ -182,6 +182,19 @@ func (r *CartRedisRepo) UpdateNameAndPrice(ctx context.Context, cart *entity.Car
 	return nil
 }
 
+func (r *CartRedisRepo) DeleteCart(ctx context.Context, userID string, cartID string) error {
+	pipe := r.Client.Pipeline()
+	pipe.Del(ctx, getCartKey(cartID))
+	pipe.SRem(ctx, getUserCartsKey(userID), cartID)
+
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to delete cart from redis: %w", err)
+	}
+
+	return nil
+}
+
 func (r *CartRedisRepo) DeleteCarts(ctx context.Context, userID string, cartIDs []string) error {
 	cartKeys := make([]string, len(cartIDs))
 	for i, cartID := range cartIDs {
