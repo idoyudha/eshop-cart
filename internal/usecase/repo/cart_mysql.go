@@ -20,7 +20,7 @@ func NewCartMySQLRepo(client *mysqlClient.MySQL) *CartMySQLRepo {
 	}
 }
 
-const queryInsertCart = `INSERT INTO carts (id, user_id, product_id, product_name, product_price, product_quantity, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+const queryInsertCart = `INSERT INTO carts (id, user_id, product_id, product_name, product_image_url, product_price, product_quantity, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
 
 func (r *CartMySQLRepo) Insert(ctx context.Context, cart *entity.Cart) error {
 	stmt, errStmt := r.Conn.PrepareContext(ctx, queryInsertCart)
@@ -29,7 +29,7 @@ func (r *CartMySQLRepo) Insert(ctx context.Context, cart *entity.Cart) error {
 	}
 	defer stmt.Close()
 
-	_, insertErr := stmt.ExecContext(ctx, cart.ID, cart.UserID, cart.ProductID, cart.ProductName, cart.ProductPrice, cart.ProductQuantity, cart.Note, cart.CreatedAt, cart.UpdatedAt)
+	_, insertErr := stmt.ExecContext(ctx, cart.ID, cart.UserID, cart.ProductID, cart.ProductName, cart.ProductImageURL, cart.ProductPrice, cart.ProductQuantity, cart.Note, cart.CreatedAt, cart.UpdatedAt)
 	if insertErr != nil {
 		return insertErr
 	}
@@ -37,7 +37,7 @@ func (r *CartMySQLRepo) Insert(ctx context.Context, cart *entity.Cart) error {
 	return nil
 }
 
-const getCartsQueryByUserID = `SELECT id, user_id, product_id, product_name, product_price, product_quantity, note, created_at, updated_at FROM carts WHERE user_id = ? AND deleted_at IS NULL`
+const getCartsQueryByUserID = `SELECT id, user_id, product_id, product_name, product_image_url, product_price, product_quantity, note, created_at, updated_at FROM carts WHERE user_id = ? AND deleted_at IS NULL`
 
 func (r *CartMySQLRepo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*entity.Cart, error) {
 	stmt, errStmt := r.Conn.PrepareContext(ctx, getCartsQueryByUserID)
@@ -55,7 +55,7 @@ func (r *CartMySQLRepo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*e
 	carts := make([]*entity.Cart, 0)
 	for rows.Next() {
 		cart := &entity.Cart{}
-		err := rows.Scan(&cart.ID, &cart.UserID, &cart.ProductID, &cart.ProductName, &cart.ProductPrice, &cart.ProductQuantity, &cart.Note, &cart.CreatedAt, &cart.UpdatedAt)
+		err := rows.Scan(&cart.ID, &cart.UserID, &cart.ProductID, &cart.ProductName, &cart.ProductImageURL, &cart.ProductPrice, &cart.ProductQuantity, &cart.Note, &cart.CreatedAt, &cart.UpdatedAt)
 		if err != nil {
 			continue
 		}

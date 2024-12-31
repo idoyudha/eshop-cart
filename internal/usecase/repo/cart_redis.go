@@ -44,13 +44,14 @@ func (r *CartRedisRepo) Save(ctx context.Context, cart *entity.Cart) error {
 	pipe := r.Client.Pipeline()
 
 	cartMap := map[string]interface{}{
-		"id":               cart.ID.String(),
-		"user_id":          cart.UserID.String(),
-		"product_id":       cart.ProductID.String(),
-		"product_name":     cart.ProductName,
-		"product_price":    cart.ProductPrice,
-		"product_quantity": cart.ProductQuantity,
-		"note":             cart.Note,
+		"id":                cart.ID.String(),
+		"user_id":           cart.UserID.String(),
+		"product_id":        cart.ProductID.String(),
+		"product_name":      cart.ProductName,
+		"product_image_url": cart.ProductImageURL,
+		"product_price":     cart.ProductPrice,
+		"product_quantity":  cart.ProductQuantity,
+		"note":              cart.Note,
 	}
 
 	pipe.HSet(ctx, cartKey, cartMap)
@@ -104,6 +105,7 @@ func (r *CartRedisRepo) GetUserCart(ctx context.Context, userID string) ([]*enti
 			UserID:          userID,
 			ProductID:       productID,
 			ProductName:     cartData["product_name"],
+			ProductImageURL: cartData["product_image_url"],
 			ProductPrice:    productPrice,
 			ProductQuantity: productQuantity,
 			Note:            cartData["note"],

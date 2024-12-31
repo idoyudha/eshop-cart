@@ -31,6 +31,7 @@ func newCartRoutes(handler *gin.RouterGroup, uc usecase.Cart, l logger.Interface
 type createCartRequest struct {
 	ProductID       uuid.UUID `json:"product_id" binding:"required"`
 	ProductName     string    `json:"product_name" binding:"required"`
+	ProductImageURL string    `json:"product_image_url" inding:"required"`
 	ProductPrice    float64   `json:"product_price" binding:"required"`
 	ProductQuantity int64     `json:"product_quantity" binding:"required"`
 	Note            string    `json:"note"`
@@ -41,6 +42,7 @@ type createCartResponse struct {
 	UserID          uuid.UUID `json:"user_id"`
 	ProductID       uuid.UUID `json:"product_id"`
 	ProductName     string    `json:"product_name"`
+	ProductImageURL string    `json:"product_image_url"`
 	ProductPrice    float64   `json:"product_price"`
 	ProductQuantity int64     `json:"product_quantity"`
 	Note            string    `json:"note"`
@@ -80,6 +82,7 @@ type getCartResponse struct {
 	UserID          uuid.UUID `json:"user_id"`
 	ProductID       uuid.UUID `json:"product_id"`
 	ProductName     string    `json:"product_name"`
+	ProductImageURL string    `json:"product_image_url"`
 	ProductPrice    float64   `json:"product_price"`
 	ProductQuantity int64     `json:"product_quantity"`
 	Note            string    `json:"note"`
@@ -116,6 +119,7 @@ type updateCartResponse struct {
 	UserID          uuid.UUID `json:"user_id"`
 	ProductID       uuid.UUID `json:"product_id"`
 	ProductName     string    `json:"product_name"`
+	ProductImageURL string    `json:"product_image_url"`
 	ProductPrice    float64   `json:"product_price"`
 	ProductQuantity int64     `json:"product_quantity"`
 	Note            string    `json:"note"`

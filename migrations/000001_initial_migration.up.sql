@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS `carts` (
     `user_id` VARCHAR(36) NOT NULL,
     `product_id` VARCHAR(36) NOT NULL,
     `product_name` VARCHAR(255) NOT NULL,
+    `product_image_url` VARCHAR(255) NOT NULL,
     `product_price` FLOAT NOT NULL,
     `product_quantity` INT NOT NULL,
     `note` VARCHAR(255),

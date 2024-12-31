@@ -11,6 +11,7 @@ type Cart struct {
 	UserID          uuid.UUID
 	ProductID       uuid.UUID
 	ProductName     string
+	ProductImageURL string
 	ProductPrice    float64
 	ProductQuantity int64
 	Note            string
