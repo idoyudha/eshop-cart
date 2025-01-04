@@ -10,19 +10,22 @@ COPY --from=modules /go/pkg /go/pkg
 COPY . /app
 WORKDIR /app
 # Build with CGO enabled for Kafka
-RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-w -s" -o main .
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-w -s" -o main ./cmd/app
 
 # Step 3: Final for production
-FROM redhat/ubi8-minimal
+FROM redhat/ubi8-minimal as production
 
-# Create a non-root user
-RUN microdnf install shadow-utils -y && \
+# Install required packages in a single layer
+RUN microdnf update -y && \
+    microdnf install -y shadow-utils cyrus-sasl-lib cyrus-sasl-devel ca-certificates tzdata && \
     useradd -r -u 1001 -g root appuser && \
-    microdnf remove shadow-utils -y && \
     microdnf clean all
 
 # Copy the binary from builder
 COPY --from=builder /app/main /app/main
+
+# Set ownership
+RUN chown appuser:root /app/main
 
 # Use the non-root user
 USER appuser
