@@ -8,28 +8,28 @@ This service handles user cart create, read, update, and delete (CRUD). Using re
 ```
 eshop-auth
 ├── .github/
-│   └── workflows/
+│   └── workflows/  # github workflows to automatically test, build, and push
 ├── cmd/
-│   └── app/
-├── config/
+│   └── app/        # configuration and log initialization
+├── config/         # configuration
 ├── internal/   
-│   ├── app/
-│   ├── controller/
+│   ├── app/        # one run function in the `app.go`
+│   ├── controller/ # serve handler layer
 │   │   ├── http/
-│   │   |   └── v1/
+│   │   |   └── v1/ # rest http
 │   │   └── kafka
-│   │       └── v1/
-│   ├── entity/
-│   ├── usecase/
-│   │   └── repo/
-│   └── utils/
-├── migrations/
+│   │       └── v1/ # kafka subscriber
+│   ├── entity/     # entities of business logic (models) can be used in any layer
+│   ├── usecase/    # business logic
+│   │   └── repo/   # abstract stirage (database) that business logic works with
+│   └── utils/      # helpers function
+├── migrations/     # sql migration
 └── pkg/
-    ├── httpserver/
-    ├── kafka/
-    ├── logger/
-    ├── mysql/
-    └── redis/
+    ├── httpserver/ # http server initialization
+    ├── kafka/      # kafka initialization
+    ├── logger/     # logger initialization
+    ├── mysql/      # mysql initialization
+    └── redis/      # redis initialization
 ```
 
 ## Tech Stack
