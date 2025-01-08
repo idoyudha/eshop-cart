@@ -15,14 +15,15 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/main ./cmd/app
 # Step 3: Final for production
 FROM debian:bullseye-slim as production
 # Add CA certificates and timezone data
-RUN apk --no-cache add ca-certificates tzdata && \
-    update-ca-certificates
+RUN apt-get update && \
+    apt-get install -y ca-certificates tzdata && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user
-RUN adduser -D -g '' appuser
+RUN useradd -r -u 1001 -g root appuser
 
 # Create app directory and set permissions
-RUN mkdir /app && chown appuser:appuser /app
+RUN mkdir /app && chown appuser:root /app
 
 # Copy the binary from builder
 COPY --from=builder /go/bin/main /app/
