@@ -13,7 +13,7 @@ WORKDIR /app
 RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/main ./cmd/app
 
 # Step 3: Final for production
-FROM alpine:3.19 as production
+FROM debian:bullseye-slim as production
 # Add CA certificates and timezone data
 RUN apk --no-cache add ca-certificates tzdata && \
     update-ca-certificates
