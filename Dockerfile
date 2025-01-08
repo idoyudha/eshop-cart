@@ -6,17 +6,23 @@ RUN go mod download
 
 # Step 2: Builder
 FROM golang:1.23.4 as builder
+# Install librdkafka
+RUN apt-get update && \
+    apt-get install -y librdkafka-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY --from=modules /go/pkg /go/pkg
 COPY . /app
 WORKDIR /app
-# Build the application with optimization flags
-RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/main ./cmd/app
+
+# Build with CGO enabled for Kafka support
+RUN CGO_ENABLED=1 GOOS=linux go build -o /go/bin/main ./cmd/app
 
 # Step 3: Final for production
 FROM debian:bullseye-slim as production
-# Add CA certificates and timezone data
+# Install runtime dependencies
 RUN apt-get update && \
-    apt-get install -y ca-certificates tzdata && \
+    apt-get install -y librdkafka1 ca-certificates tzdata && \
     rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user
