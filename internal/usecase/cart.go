@@ -97,10 +97,12 @@ func (u *CartUseCase) GetUserCart(ctx context.Context, userID uuid.UUID) ([]*ent
 }
 
 func (u *CartUseCase) UpdateQtyAndNoteCart(ctx context.Context, cart *entity.Cart) error {
-	if errUpdate := u.repoMySQL.UpdateQtyAndNote(ctx, cart); errUpdate != nil {
+	productID, errUpdate := u.repoMySQL.UpdateQtyAndNote(ctx, cart)
+	if errUpdate != nil {
 		return errUpdate
 	}
 
+	cart.ProductID = *productID
 	if errSave := u.repoRedis.UpdateQtyAndNote(ctx, cart); errSave != nil {
 		return errSave
 	}

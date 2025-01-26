@@ -37,7 +37,7 @@ func getUserCartsKey(userID string) string {
 // add cartID to set -> user:{userID}:carts
 // TODO: just add the quantity if found the same key
 func (r *CartRedisRepo) Save(ctx context.Context, cart *entity.Cart) error {
-	cartKey := getCartKey(cart.ID.String())
+	cartKey := getCartKey(cart.ProductID.String())
 	userCartsKey := getUserCartsKey(cart.UserID.String())
 
 	// perform multiple operations
@@ -55,7 +55,7 @@ func (r *CartRedisRepo) Save(ctx context.Context, cart *entity.Cart) error {
 	}
 
 	pipe.HSet(ctx, cartKey, cartMap)
-	pipe.SAdd(ctx, userCartsKey, cart.ID.String())
+	pipe.SAdd(ctx, userCartsKey, cart.ProductID.String())
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
@@ -118,8 +118,7 @@ func (r *CartRedisRepo) GetUserCart(ctx context.Context, userID string) ([]*enti
 }
 
 func (r *CartRedisRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart) error {
-	cartKey := getCartKey(cart.ID.String())
-
+	cartKey := getCartKey(cart.ProductID.String())
 	exists, err := r.Client.Exists(ctx, cartKey).Result()
 	if err != nil {
 		return fmt.Errorf("cart is not exist: %w", err)
@@ -142,6 +141,7 @@ func (r *CartRedisRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart)
 	return nil
 }
 
+// TODO: REFACTOR -> bcs already refactor the product_id as a key in redis
 func (r *CartRedisRepo) UpdateNameAndPrice(ctx context.Context, cart *entity.Cart) error {
 	// get all cart keys from Redis that contain this product
 	pattern := fmt.Sprintf("cart:*")
@@ -239,9 +239,7 @@ func (r *CartRedisRepo) UpdateProductQtyCart(ctx context.Context, cart *entity.C
 	}
 
 	pipe := r.Client.Pipeline()
-	pipe.HSet(ctx, cartKey, map[string]interface{}{
-		"product_quantity": cart.ProductQuantity,
-	})
+	pipe.HIncrBy(ctx, cartKey, "product_quantity", cart.ProductQuantity)
 
 	_, err = pipe.Exec(ctx)
 	if err != nil {

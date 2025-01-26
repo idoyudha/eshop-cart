@@ -66,20 +66,34 @@ func (r *CartMySQLRepo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*e
 }
 
 const queryUpdateQtyAndNoteCart = `UPDATE carts SET product_quantity = ?, note = ?, updated_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL`
+const querySelectUpdatedCart = `SELECT product_id FROM carts WHERE id = ? AND user_id = ? AND deleted_at IS NULL`
 
-func (r *CartMySQLRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart) error {
+func (r *CartMySQLRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart) (*uuid.UUID, error) {
 	stmt, errStmt := r.Conn.PrepareContext(ctx, queryUpdateQtyAndNoteCart)
 	if errStmt != nil {
-		return errStmt
+		return nil, errStmt
 	}
 	defer stmt.Close()
 
 	_, updateErr := stmt.ExecContext(ctx, cart.ProductQuantity, cart.Note, cart.UpdatedAt, cart.ID, cart.UserID)
 	if updateErr != nil {
-		return updateErr
+		return nil, updateErr
 	}
 
-	return nil
+	// get product id for updating in redis
+	stmt, errStmt = r.Conn.PrepareContext(ctx, querySelectUpdatedCart)
+	if errStmt != nil {
+		return nil, errStmt
+	}
+	defer stmt.Close()
+	row := stmt.QueryRowContext(ctx, cart.ID, cart.UserID)
+	var productID uuid.UUID
+	err := row.Scan(&productID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &productID, nil
 }
 
 const queryUpdateNameAndPriceCart = `UPDATE carts SET product_name = ?, product_price = ?, updated_at = ? WHERE product_id = ? AND deleted_at IS NOT NULL`
@@ -142,7 +156,7 @@ func (r *CartMySQLRepo) DeleteOne(ctx context.Context, cartID uuid.UUID) error {
 	return nil
 }
 
-const queryUpdateProductQtyCart = `UPDATE carts SET product_quantity = ?, updated_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL`
+const queryUpdateProductQtyCart = `UPDATE carts SET product_quantity = product_quantity + ?, updated_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL`
 
 func (r *CartMySQLRepo) UpdateProductQty(ctx context.Context, cart *entity.Cart) error {
 	stmt, errStmt := r.Conn.PrepareContext(ctx, queryUpdateProductQtyCart)
