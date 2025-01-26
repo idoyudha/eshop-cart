@@ -15,6 +15,7 @@ type (
 		UpdateNameAndPrice(context.Context, *entity.Cart) error
 		DeleteMany(context.Context, uuid.UUIDs) error
 		DeleteOne(context.Context, uuid.UUID) error
+		UpdateProductQty(context.Context, *entity.Cart) error
 	}
 
 	CartRedisRepo interface {
@@ -24,6 +25,8 @@ type (
 		UpdateNameAndPrice(context.Context, *entity.Cart) error
 		DeleteCart(context.Context, string, string) error
 		DeleteCarts(context.Context, string, []string) error
+		IsProductExistInUserCart(context.Context, string, string) (bool, error)
+		UpdateProductQtyCart(context.Context, *entity.Cart) error
 	}
 
 	Cart interface {

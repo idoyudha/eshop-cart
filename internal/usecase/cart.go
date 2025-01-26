@@ -38,18 +38,31 @@ func (u *CartUseCase) CreateCart(ctx context.Context, cart *entity.Cart) (entity
 		return entity.Cart{}, err
 	}
 
-	// TODO: check if cart already exist with same user id and product id
-	// if exist, then update the qty and note
-	if errInsert := u.repoMySQL.Insert(ctx, cart); errInsert != nil {
-		return entity.Cart{}, errInsert
+	exist, errExist := u.repoRedis.IsProductExistInUserCart(ctx, cart.UserID.String(), cart.ProductID.String())
+	if errExist != nil {
+		return entity.Cart{}, errExist
 	}
 
-	errSave := u.repoRedis.Save(ctx, cart)
+	var errInsertOrUpdateRedis error
 
-	// delete cart from mysql if save to redis failed
-	if errSave != nil {
+	if !exist {
+		if errInsert := u.repoMySQL.Insert(ctx, cart); errInsert != nil {
+			return entity.Cart{}, errInsert
+		}
+
+		errInsertOrUpdateRedis = u.repoRedis.Save(ctx, cart)
+	} else {
+		if errUpdateProductQty := u.repoMySQL.UpdateProductQty(ctx, cart); errUpdateProductQty != nil {
+			return entity.Cart{}, errUpdateProductQty
+		}
+
+		errInsertOrUpdateRedis = u.repoRedis.UpdateProductQtyCart(ctx, cart)
+	}
+
+	// delete cart from mysql if insert or update to redis failed
+	if errInsertOrUpdateRedis != nil {
 		_ = u.repoMySQL.DeleteOne(ctx, cart.ID)
-		return entity.Cart{}, errSave
+		return entity.Cart{}, errInsertOrUpdateRedis
 	}
 
 	return *cart, nil

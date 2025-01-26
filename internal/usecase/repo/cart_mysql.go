@@ -141,3 +141,20 @@ func (r *CartMySQLRepo) DeleteOne(ctx context.Context, cartID uuid.UUID) error {
 
 	return nil
 }
+
+const queryUpdateProductQtyCart = `UPDATE carts SET product_quantity = ?, updated_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL`
+
+func (r *CartMySQLRepo) UpdateProductQty(ctx context.Context, cart *entity.Cart) error {
+	stmt, errStmt := r.Conn.PrepareContext(ctx, queryUpdateProductQtyCart)
+	if errStmt != nil {
+		return errStmt
+	}
+	defer stmt.Close()
+
+	_, updateErr := stmt.ExecContext(ctx, cart.ProductQuantity, cart.UpdatedAt, cart.ID, cart.UserID)
+	if updateErr != nil {
+		return updateErr
+	}
+
+	return nil
+}

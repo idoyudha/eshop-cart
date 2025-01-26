@@ -125,7 +125,7 @@ func (r *CartRedisRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart)
 		return fmt.Errorf("cart is not exist: %w", err)
 	}
 	if exists == 0 {
-		return fmt.Errorf("cart not found")
+		return fmt.Errorf("cart not found for updating quantity and note")
 	}
 
 	pipe := r.Client.Pipeline()
@@ -211,6 +211,41 @@ func (r *CartRedisRepo) DeleteCarts(ctx context.Context, userID string, cartIDs 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to delete cart from redis: %w", err)
+	}
+
+	return nil
+}
+
+func (r *CartRedisRepo) IsProductExistInUserCart(ctx context.Context, userID string, productID string) (bool, error) {
+	cartKey := getUserCartsKey(userID)
+
+	exists, err := r.Client.SIsMember(ctx, cartKey, productID).Result()
+	if err != nil {
+		return false, fmt.Errorf("failed to check if cart exists: %w", err)
+	}
+
+	return exists, nil
+}
+
+func (r *CartRedisRepo) UpdateProductQtyCart(ctx context.Context, cart *entity.Cart) error {
+	cartKey := getCartKey(cart.ProductID.String())
+
+	exists, err := r.Client.Exists(ctx, cartKey).Result()
+	if err != nil {
+		return fmt.Errorf("cart is not exist: %w", err)
+	}
+	if exists == 0 {
+		return fmt.Errorf("cart not found for updating quantity")
+	}
+
+	pipe := r.Client.Pipeline()
+	pipe.HSet(ctx, cartKey, map[string]interface{}{
+		"product_quantity": cart.ProductQuantity,
+	})
+
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update cart: %w", err)
 	}
 
 	return nil
