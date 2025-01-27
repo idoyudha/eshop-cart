@@ -86,6 +86,7 @@ func (r *CartMySQLRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart)
 		return nil, errStmt
 	}
 	defer stmt.Close()
+
 	row := stmt.QueryRowContext(ctx, cart.ID, cart.UserID)
 	var productID uuid.UUID
 	err := row.Scan(&productID)
@@ -139,21 +140,36 @@ func (r *CartMySQLRepo) DeleteMany(ctx context.Context, cartIDs uuid.UUIDs) erro
 	return nil
 }
 
-const queryDeleteCart = `DELETE FROM carts WHERE id = ?`
+const queryDeleteCart = `UPDATE carts SET deleted_at = ? WHERE id = ?`
+const queryGetProductIDDeletedCart = `SELECT product_id FROM carts WHERE id = ? AND deleted_at IS NOT NULL`
 
-func (r *CartMySQLRepo) DeleteOne(ctx context.Context, cartID uuid.UUID) error {
+func (r *CartMySQLRepo) DeleteOne(ctx context.Context, cartID uuid.UUID) (*uuid.UUID, error) {
 	stmt, errStmt := r.Conn.PrepareContext(ctx, queryDeleteCart)
 	if errStmt != nil {
-		return errStmt
+		return nil, errStmt
 	}
 	defer stmt.Close()
 
-	_, deleteErr := stmt.ExecContext(ctx, cartID)
+	_, deleteErr := stmt.ExecContext(ctx, time.Now(), cartID)
 	if deleteErr != nil {
-		return deleteErr
+		return nil, deleteErr
 	}
 
-	return nil
+	// get product id for updating in redis
+	stmt, errStmt = r.Conn.PrepareContext(ctx, queryGetProductIDDeletedCart)
+	if errStmt != nil {
+		return nil, errStmt
+	}
+	defer stmt.Close()
+
+	row := stmt.QueryRowContext(ctx, cartID)
+	var productID uuid.UUID
+	err := row.Scan(&productID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &productID, nil
 }
 
 const queryUpdateProductQtyCart = `UPDATE carts SET product_quantity = product_quantity + ?, updated_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL`

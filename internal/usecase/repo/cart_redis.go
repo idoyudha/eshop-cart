@@ -197,7 +197,12 @@ func (r *CartRedisRepo) DeleteCart(ctx context.Context, userID string, cartID st
 	return nil
 }
 
-func (r *CartRedisRepo) DeleteCarts(ctx context.Context, userID string, cartIDs []string) error {
+func (r *CartRedisRepo) DeleteCarts(ctx context.Context, userID string) error {
+	cartIDs, err := r.Client.SMembers(ctx, getUserCartsKey(userID)).Result()
+	if err != nil {
+		return fmt.Errorf("failed to get cartid members from redis: %w", err)
+	}
+
 	cartKeys := make([]string, len(cartIDs))
 	for i, cartID := range cartIDs {
 		cartKeys[i] = getCartKey(cartID)
@@ -208,7 +213,7 @@ func (r *CartRedisRepo) DeleteCarts(ctx context.Context, userID string, cartIDs 
 	pipe.Del(ctx, cartKeys...)
 	pipe.SRem(ctx, getUserCartsKey(userID), cartIDs)
 
-	_, err := pipe.Exec(ctx)
+	_, err = pipe.Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to delete cart from redis: %w", err)
 	}
