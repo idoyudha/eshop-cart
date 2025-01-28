@@ -38,18 +38,31 @@ func (u *CartUseCase) CreateCart(ctx context.Context, cart *entity.Cart) (entity
 		return entity.Cart{}, err
 	}
 
-	// TODO: check if cart already exist with same user id and product id
-	// if exist, then update the qty and note
-	if errInsert := u.repoMySQL.Insert(ctx, cart); errInsert != nil {
-		return entity.Cart{}, errInsert
+	exist, errExist := u.repoRedis.IsProductExistInUserCart(ctx, cart.UserID.String(), cart.ProductID.String())
+	if errExist != nil {
+		return entity.Cart{}, errExist
 	}
 
-	errSave := u.repoRedis.Save(ctx, cart)
+	var errInsertOrUpdateRedis error
 
-	// delete cart from mysql if save to redis failed
-	if errSave != nil {
-		_ = u.repoMySQL.DeleteOne(ctx, cart.ID)
-		return entity.Cart{}, errSave
+	if !exist {
+		if errInsert := u.repoMySQL.Insert(ctx, cart); errInsert != nil {
+			return entity.Cart{}, errInsert
+		}
+
+		errInsertOrUpdateRedis = u.repoRedis.Save(ctx, cart)
+	} else {
+		if errUpdateProductQty := u.repoMySQL.UpdateProductQty(ctx, cart); errUpdateProductQty != nil {
+			return entity.Cart{}, errUpdateProductQty
+		}
+
+		errInsertOrUpdateRedis = u.repoRedis.UpdateProductQtyCart(ctx, cart)
+	}
+
+	// delete cart from mysql if insert or update to redis failed
+	if errInsertOrUpdateRedis != nil {
+		_, _ = u.repoMySQL.DeleteOne(ctx, cart.ID)
+		return entity.Cart{}, errInsertOrUpdateRedis
 	}
 
 	return *cart, nil
@@ -84,10 +97,12 @@ func (u *CartUseCase) GetUserCart(ctx context.Context, userID uuid.UUID) ([]*ent
 }
 
 func (u *CartUseCase) UpdateQtyAndNoteCart(ctx context.Context, cart *entity.Cart) error {
-	if errUpdate := u.repoMySQL.UpdateQtyAndNote(ctx, cart); errUpdate != nil {
+	productID, errUpdate := u.repoMySQL.UpdateQtyAndNote(ctx, cart)
+	if errUpdate != nil {
 		return errUpdate
 	}
 
+	cart.ProductID = *productID
 	if errSave := u.repoRedis.UpdateQtyAndNote(ctx, cart); errSave != nil {
 		return errSave
 	}
@@ -108,11 +123,12 @@ func (u *CartUseCase) UpdateProductNameAndPriceCart(ctx context.Context, cart *e
 }
 
 func (u *CartUseCase) DeleteCart(ctx context.Context, userID uuid.UUID, cartID uuid.UUID) error {
-	if errDelete := u.repoMySQL.DeleteOne(ctx, cartID); errDelete != nil {
+	productID, errDelete := u.repoMySQL.DeleteOne(ctx, cartID)
+	if errDelete != nil {
 		return errDelete
 	}
 
-	if errDelete := u.repoRedis.DeleteCart(ctx, userID.String(), cartID.String()); errDelete != nil {
+	if errDelete := u.repoRedis.DeleteCart(ctx, userID.String(), productID.String()); errDelete != nil {
 		return errDelete
 	}
 
@@ -128,7 +144,7 @@ func (u *CartUseCase) DeleteCarts(ctx context.Context, userID uuid.UUID, cartIDs
 	for _, cartID := range cartIDs {
 		redisCartIDs = append(redisCartIDs, cartID.String())
 	}
-	if errDelete := u.repoRedis.DeleteCarts(ctx, userID.String(), redisCartIDs); errDelete != nil {
+	if errDelete := u.repoRedis.DeleteCarts(ctx, userID.String()); errDelete != nil {
 		return errDelete
 	}
 

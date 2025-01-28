@@ -11,10 +11,11 @@ type (
 	CartMySQLRepo interface {
 		Insert(context.Context, *entity.Cart) error
 		GetByUserID(context.Context, uuid.UUID) ([]*entity.Cart, error)
-		UpdateQtyAndNote(context.Context, *entity.Cart) error
+		UpdateQtyAndNote(context.Context, *entity.Cart) (*uuid.UUID, error)
 		UpdateNameAndPrice(context.Context, *entity.Cart) error
 		DeleteMany(context.Context, uuid.UUIDs) error
-		DeleteOne(context.Context, uuid.UUID) error
+		DeleteOne(context.Context, uuid.UUID) (*uuid.UUID, error)
+		UpdateProductQty(context.Context, *entity.Cart) error
 	}
 
 	CartRedisRepo interface {
@@ -23,7 +24,9 @@ type (
 		UpdateQtyAndNote(context.Context, *entity.Cart) error
 		UpdateNameAndPrice(context.Context, *entity.Cart) error
 		DeleteCart(context.Context, string, string) error
-		DeleteCarts(context.Context, string, []string) error
+		DeleteCarts(context.Context, string) error
+		IsProductExistInUserCart(context.Context, string, string) (bool, error)
+		UpdateProductQtyCart(context.Context, *entity.Cart) error
 	}
 
 	Cart interface {

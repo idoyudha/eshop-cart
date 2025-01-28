@@ -37,7 +37,7 @@ func getUserCartsKey(userID string) string {
 // add cartID to set -> user:{userID}:carts
 // TODO: just add the quantity if found the same key
 func (r *CartRedisRepo) Save(ctx context.Context, cart *entity.Cart) error {
-	cartKey := getCartKey(cart.ID.String())
+	cartKey := getCartKey(cart.ProductID.String())
 	userCartsKey := getUserCartsKey(cart.UserID.String())
 
 	// perform multiple operations
@@ -55,7 +55,7 @@ func (r *CartRedisRepo) Save(ctx context.Context, cart *entity.Cart) error {
 	}
 
 	pipe.HSet(ctx, cartKey, cartMap)
-	pipe.SAdd(ctx, userCartsKey, cart.ID.String())
+	pipe.SAdd(ctx, userCartsKey, cart.ProductID.String())
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
@@ -118,14 +118,13 @@ func (r *CartRedisRepo) GetUserCart(ctx context.Context, userID string) ([]*enti
 }
 
 func (r *CartRedisRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart) error {
-	cartKey := getCartKey(cart.ID.String())
-
+	cartKey := getCartKey(cart.ProductID.String())
 	exists, err := r.Client.Exists(ctx, cartKey).Result()
 	if err != nil {
 		return fmt.Errorf("cart is not exist: %w", err)
 	}
 	if exists == 0 {
-		return fmt.Errorf("cart not found")
+		return fmt.Errorf("cart not found for updating quantity and note")
 	}
 
 	pipe := r.Client.Pipeline()
@@ -142,6 +141,7 @@ func (r *CartRedisRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart)
 	return nil
 }
 
+// TODO: REFACTOR -> bcs already refactor the product_id as a key in redis
 func (r *CartRedisRepo) UpdateNameAndPrice(ctx context.Context, cart *entity.Cart) error {
 	// get all cart keys from Redis that contain this product
 	pattern := fmt.Sprintf("cart:*")
@@ -197,7 +197,12 @@ func (r *CartRedisRepo) DeleteCart(ctx context.Context, userID string, cartID st
 	return nil
 }
 
-func (r *CartRedisRepo) DeleteCarts(ctx context.Context, userID string, cartIDs []string) error {
+func (r *CartRedisRepo) DeleteCarts(ctx context.Context, userID string) error {
+	cartIDs, err := r.Client.SMembers(ctx, getUserCartsKey(userID)).Result()
+	if err != nil {
+		return fmt.Errorf("failed to get cartid members from redis: %w", err)
+	}
+
 	cartKeys := make([]string, len(cartIDs))
 	for i, cartID := range cartIDs {
 		cartKeys[i] = getCartKey(cartID)
@@ -208,9 +213,42 @@ func (r *CartRedisRepo) DeleteCarts(ctx context.Context, userID string, cartIDs 
 	pipe.Del(ctx, cartKeys...)
 	pipe.SRem(ctx, getUserCartsKey(userID), cartIDs)
 
-	_, err := pipe.Exec(ctx)
+	_, err = pipe.Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to delete cart from redis: %w", err)
+	}
+
+	return nil
+}
+
+func (r *CartRedisRepo) IsProductExistInUserCart(ctx context.Context, userID string, productID string) (bool, error) {
+	cartKey := getUserCartsKey(userID)
+
+	exists, err := r.Client.SIsMember(ctx, cartKey, productID).Result()
+	if err != nil {
+		return false, fmt.Errorf("failed to check if cart exists: %w", err)
+	}
+
+	return exists, nil
+}
+
+func (r *CartRedisRepo) UpdateProductQtyCart(ctx context.Context, cart *entity.Cart) error {
+	cartKey := getCartKey(cart.ProductID.String())
+
+	exists, err := r.Client.Exists(ctx, cartKey).Result()
+	if err != nil {
+		return fmt.Errorf("cart is not exist: %w", err)
+	}
+	if exists == 0 {
+		return fmt.Errorf("cart not found for updating quantity")
+	}
+
+	pipe := r.Client.Pipeline()
+	pipe.HIncrBy(ctx, cartKey, "product_quantity", cart.ProductQuantity)
+
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update cart: %w", err)
 	}
 
 	return nil
