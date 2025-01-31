@@ -21,7 +21,7 @@ import (
 func Run(cfg *config.Config) {
 	l := logger.New(cfg.Log.Level)
 
-	kafkaConsumer, err := kafka.NewKafkaConsumer(cfg.Kafka.Broker)
+	kafkaConsumer, err := kafka.NewKafkaConsumer(cfg.Kafka)
 	if err != nil {
 		l.Fatal("app - Run - kafka.NewKafkaConsumer: ", err)
 	}
