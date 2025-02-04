@@ -65,7 +65,7 @@ func (r *CartMySQLRepo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*e
 	return carts, nil
 }
 
-const queryUpdateQtyAndNoteCart = `UPDATE carts SET product_quantity = ?, note = ?, updated_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL`
+const queryUpdateQtyAndNoteCart = `UPDATE carts SET product_quantity = ?, note = ?, updated_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL`
 const querySelectUpdatedCart = `SELECT product_id FROM carts WHERE id = ? AND user_id = ? AND deleted_at IS NULL`
 
 func (r *CartMySQLRepo) UpdateQtyAndNote(ctx context.Context, cart *entity.Cart) (*uuid.UUID, error) {
