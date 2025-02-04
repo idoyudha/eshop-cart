@@ -35,7 +35,6 @@ func getUserCartsKey(userID string) string {
 
 // store cart data as hash -> cart:{cartID}
 // add cartID to set -> user:{userID}:carts
-// TODO: just add the quantity if found the same key
 func (r *CartRedisRepo) Save(ctx context.Context, cart *entity.Cart) error {
 	cartKey := getCartKey(cart.ProductID.String())
 	userCartsKey := getUserCartsKey(cart.UserID.String())

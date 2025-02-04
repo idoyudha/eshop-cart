@@ -25,5 +25,6 @@ func RedisFailoverOptions(cfg config.Redis) *redis.FailoverOptions {
 		MaxRetries:       3,
 		MinRetryBackoff:  time.Second,
 		MaxRetryBackoff:  time.Second * 5,
+		RouteByLatency:   true,
 	}
 }
