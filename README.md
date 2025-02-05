@@ -17,8 +17,7 @@ eshop-auth
 │   ├── controller/ # serve handler layer
 │   │   ├── http/
 │   │   |   └── v1/ # rest http
-│   │   └── kafka
-│   │       └── v1/ # kafka subscriber
+│   │   └── kafka   # kafka consumers
 │   ├── entity/     # entities of business logic (models) can be used in any layer
 │   ├── usecase/    # business logic
 │   │   └── repo/   # abstract stirage (database) that business logic works with
