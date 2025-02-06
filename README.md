@@ -32,10 +32,11 @@ eshop-auth
 ```
 
 ## Tech Stack
-- Backend: Go
-- Authorization: AWS Cognito
-- Database: Redis and MySQL
+- Programming Language: Go
 - CI/CD: Github Actions
+- Framework: Gin
+- Database: Redis and MySQL
+- Identity and Access Management: AWS Cognito
 - Message Broker: Apache Kafka
 - Container: Docker
 
